@@ -8,6 +8,7 @@
 # https://gist.github.com/foozmeat/5154962
 # Peter Steinberger, PSPDFKit GmbH, @steipete.
 # Felix Schwarz, IOSPIRIT GmbH, @felix_schwarz.
+# Nilesh Jaiswal, @nilesh1883.
 
 set -x
 

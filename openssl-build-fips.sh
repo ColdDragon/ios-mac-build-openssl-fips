@@ -29,6 +29,7 @@ if [ -z $1 ]; then
 	TVOS_SDK_VERSION="" #"9.0"
 	TVOS_MIN_SDK_VERSION="9.0"
 
+    OSX_SDK_VERSION="" #"10.13"
 	OSX_DEPLOYMENT_TARGET="10.11"
 else
 	IOS_SDK_VERSION=$1
@@ -77,35 +78,58 @@ buildIncore()
 buildFIPS()
 {
 	ARCH=$1
+    OS=$2
 	resetFIPS
-	echo "Building ${FIPS_VERSION} for ${ARCH}"
+	echo "Building ${FIPS_VERSION} for ${ARCH} and ${OS}"
 
-	if [[ "${ARCH}" == "i386" || "${ARCH}" == "x86_64" ]]; then
-		PLATFORM="iPhoneSimulator"
-	else
-		PLATFORM="iPhoneOS"
-# 		sed -ie "s!static volatile sig_atomic_t intr_signal;!static volatile intr_signal;!" "crypto/ui/ui_openssl.c"
-	fi
+    if [[ "${OS}" == "iOS" ]]; then
+        if [[ "${ARCH}" == "i386" || "${ARCH}" == "x86_64" ]]; then
+    		PLATFORM="iPhoneSimulator"
+    	else
+    		PLATFORM="iPhoneOS"
+    # 		sed -ie "s!static volatile sig_atomic_t intr_signal;!static volatile intr_signal;!" "crypto/ui/ui_openssl.c"
+    	fi
+    else
+        PLATFORM="MacOSX"
+    fi
 
 	export $PLATFORM
-	export CROSS_TOP="${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer"
-	export CROSS_SDK="${PLATFORM}${IOS_SDK_VERSION}.sdk"
+
+    if [[ "${OS}" == "iOS" ]]; then
+        export CROSS_TOP="${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer"
+    	export CROSS_SDK="${PLATFORM}${IOS_SDK_VERSION}.sdk"
+    fi
+
 	export BUILD_TOOLS="${DEVELOPER}"
 	export CC="${BUILD_TOOLS}/usr/bin/gcc -fembed-bitcode "
 
-	if [[ "${ARCH}" == "x86_64" ]]; then
-		TARGET="iphoneos-cross"
-	elif [[ "${ARCH}" == "i386" ]]; then
-		TARGET="darwin-i386-cc"
-	elif [[ "${ARCH}" == "arm64" ]]; then
-		TARGET="ios64-cross"
-	else
-		TARGET="ios-cross"
+    if [[ "${OS}" == "iOS" ]]; then
+        if [[ "${ARCH}" == "x86_64" ]]; then
+    		TARGET="iphoneos-cross"
+    	elif [[ "${ARCH}" == "i386" ]]; then
+    		TARGET="darwin-i386-cc"
+    	elif [[ "${ARCH}" == "arm64" ]]; then
+    		TARGET="ios64-cross"
+    	else
+    		TARGET="ios-cross"
+    	fi
+    else
+        if [[ "${ARCH}" == "i386" ]]; then
+    		TARGET="darwin-i386-cc"
+        elif [[ "${ARCH}" == "x86_64" ]]; then
+            TARGET="darwin64-x86_64-cc"
+        else
+            TARGET="darwin64-x86_64-cc"
+        fi
+    fi
 
-	fi
+    if [[ "${OS}" == "iOS" ]]; then
+    	SYSTEM="iphoneos"
+    else
+    	SYSTEM="darwin"
+    fi
 
-	MACHINE=`echo -"$ARCH" | sed -e 's/^-//'`
-	SYSTEM="iphoneos"
+    MACHINE=`echo -"$ARCH" | sed -e 's/^-//'`
 	BUILD="build"
 
 	export MACHINE
@@ -120,8 +144,13 @@ buildFIPS()
 
 	pushd . > /dev/null
 	cd "${FIPS_VERSION}"
-	./Configure no-asm no-shared no-async no-ec2m ${TARGET} --openssldir="/private/tmp/${FIPS_VERSION}-${ARCH}" &> "/private/tmp/${FIPS_VERSION}-${ARCH}.log"
-	sed -ie "s!^CFLAG=!CFLAG=-isysroot ${CROSS_TOP}/SDKs/${CROSS_SDK} -miphoneos-version-min=${IOS_MIN_SDK_VERSION} !" "Makefile"
+
+    ./Configure no-asm no-shared no-async no-ec2m ${TARGET} --openssldir="/private/tmp/${FIPS_VERSION}-${ARCH}" &> "/private/tmp/${FIPS_VERSION}-${ARCH}.log"
+
+    if [[ "${OS}" == "iOS" ]]; then
+        sed -ie "s!^CFLAG=!CFLAG=-isysroot ${CROSS_TOP}/SDKs/${CROSS_SDK} -miphoneos-version-min=${IOS_MIN_SDK_VERSION} !" "Makefile"
+    fi
+
 	make >> "/private/tmp/${FIPS_VERSION}-${ARCH}.log" 2>&1
 	make install >> "/private/tmp/${FIPS_VERSION}-${ARCH}.log" 2>&1
 	make clean >> "/private/tmp/${FIPS_VERSION}-${ARCH}.log" 2>&1
@@ -131,23 +160,30 @@ buildFIPS()
 buildMac()
 {
 	ARCH=$1
+    resetOpenSSL
 
 	echo "Building ${OPENSSL_VERSION} for ${ARCH}"
 
 	TARGET="darwin-i386-cc"
 
-	if [[ $ARCH == "x86_64" ]]; then
-		TARGET="darwin64-x86_64-cc"
+    if [[ "${ARCH}" == "x86_64" ]]; then
+        TARGET="darwin64-x86_64-cc"
+	elif [[ "${ARCH}" == "i386" ]]; then
+		TARGET="darwin-i386-cc"
 	fi
 
-	export CC="${BUILD_TOOLS}/usr/bin/clang -fembed-bitcode -mmacosx-version-min=${OSX_DEPLOYMENT_TARGET}"
+    export BUILD_TOOLS="${DEVELOPER}"
+    export CC="${BUILD_TOOLS}/usr/bin/gcc -fembed-bitcode -arch ${ARCH} -mmacosx-version-min=${OSX_DEPLOYMENT_TARGET}"
 
 	pushd . > /dev/null
 	cd "${OPENSSL_VERSION}"
-	./Configure no-asm ${TARGET} --openssldir="/private/tmp/${OPENSSL_VERSION}-${ARCH}" &> "/private/tmp/${OPENSSL_VERSION}-${ARCH}.log"
-	make >> "/private/tmp/${OPENSSL_VERSION}-${ARCH}.log" 2>&1
-	make install_sw >> "/private/tmp/${OPENSSL_VERSION}-${ARCH}.log" 2>&1
-	make clean >> "/private/tmp/${OPENSSL_VERSION}-${ARCH}.log" 2>&1
+	./Configure fips no-asm no-shared no-async no-ssl3 no-ec2m ${TARGET} --prefix="/private/tmp/${OPENSSL_VERSION}-OSX-${ARCH}" --openssldir="/private/tmp/${OPENSSL_VERSION}-OSX-${ARCH}" --with-fipslibdir="/private/tmp/${FIPS_VERSION}-${ARCH}" &> "/private/tmp/${OPENSSL_VERSION}-OSX-${ARCH}.log"
+
+    echo "Done Configuring For OSX"
+
+	make >> "/private/tmp/${OPENSSL_VERSION}-OSX-${ARCH}.log" 2>&1
+	make install_sw >> "/private/tmp/${OPENSSL_VERSION}-OSX-${ARCH}.log" 2>&1
+	make clean >> "/private/tmp/${OPENSSL_VERSION}-OSX-${ARCH}.log" 2>&1
 	popd > /dev/null
 }
 
@@ -194,7 +230,7 @@ buildIOS()
 
 	./Configure fips no-asm no-shared no-async no-ssl2 no-ssl3 no-ec2m iphoneos-cross --prefix="/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}" --openssldir="/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}" --with-fipslibdir="/private/tmp/${FIPS_VERSION}-${ARCH}" &> "/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}.log"
 
-	echo "Done Configuring"
+	echo "Done Configuring For iOS"
 
 	# add -isysroot to CC=
 	sed -ie "s!^CFLAGS=!CFLAGS=-isysroot ${CROSS_TOP}/SDKs/${CROSS_SDK} -miphoneos-version-min=${IOS_MIN_SDK_VERSION} !" "Makefile"
@@ -285,21 +321,27 @@ buildIncore
 
 echo "Building FIPS iOS libraries"
 
-buildFIPS "armv7s"
-buildIOS "armv7s"
-
-buildFIPS "armv7"
+buildFIPS "armv7" "iOS"
 buildIOS "armv7"
 
-buildFIPS "arm64"
+buildFIPS "armv7s" "iOS"
+buildIOS "armv7s"
+
+buildFIPS "arm64" "iOS"
 buildIOS "arm64"
 
-buildFIPS "i386"
+buildFIPS "i386" "iOS"
 buildIOS "i386"
+
+buildFIPS "x86_64" "iOS"
+buildIOS "x86_64"
+
+echo "Building FIPS OSX libraries"
+
+buildFIPS "i386" "OSX"
 buildMac "i386"
 
-buildFIPS "x86_64"
-buildIOS "x86_64"
+buildFIPS "x86_64" "OSX"
 buildMac "x86_64"
 
 
@@ -332,13 +374,13 @@ lipo \
 
 echo "Building OSX libraries"
 lipo -create -output lib/libcrypto_mac.a \
-	"/private/tmp/${OPENSSL_VERSION}-x86_64/lib/libcrypto.a"\
-	"/private/tmp/${OPENSSL_VERSION}-i386/lib/libcrypto.a"
+	"/private/tmp/${OPENSSL_VERSION}-OSX-x86_64/lib/libcrypto.a"\
+	"/private/tmp/${OPENSSL_VERSION}-OSX-i386/lib/libcrypto.a"
 
 
 lipo -create -output lib/libssl_mac.a \
-	"/private/tmp/${OPENSSL_VERSION}-x86_64/lib/libssl.a" \
-	"/private/tmp/${OPENSSL_VERSION}-i386/lib/libssl.a"
+	"/private/tmp/${OPENSSL_VERSION}-OSX-x86_64/lib/libssl.a" \
+	"/private/tmp/${OPENSSL_VERSION}-OSX-i386/lib/libssl.a"
 
 
 echo "Removing old project files"

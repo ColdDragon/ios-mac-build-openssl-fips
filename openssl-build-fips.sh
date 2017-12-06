@@ -33,24 +33,26 @@ function main() {
 #   Downloading Source files
     downloadSource
 
+#   Setting  Environment Variables
+    setEnvironment
+
 #   Building Incore Library
     buildIncore
 
 #   Building FIPS and OpenSSL for All Arch
-    buildFipsAllArch
+    buildFipsForAllArch
 
 #   Creating combined fat libraries
-    createFatLibraries
+    # createFatLibraries
+
+#   Finish clean
+    # cleanupAll
 
     echo "Done..."
     echo "Add the openssl directory in ${PWD}/fips_enabled_openssl to your xcode project"
-
-#   Finish clean
-    cleanupAll
 }
 
-function usage()
-{
+function usage(){
 	echo "usage: $0 [iOS SDK version (defaults to latest)] [tvOS SDK version (defaults to latest)] [OS X minimum deployment target (defaults to 10.7)]"
 	exit 127
 }
@@ -78,7 +80,6 @@ function setLibraryVersion() {
     OPENSSL_VERSION="openssl-1.0.2m" #openssl-1.1.0g
     FIPS_VERSION="openssl-fips-ecp-2.0.16"
     INCORE_VERSION="ios-incore-2.0.1"
-    DEVELOPER=`xcode-select -print-path`
 }
 
 function downloadSource() {
@@ -171,36 +172,35 @@ function createOutputPackage() {
     cp /private/tmp/${FIPS_VERSION}-armv7/lib/fips_premain.c fips_enabled_openssl/openssl/fips_premain.c
 }
 
-function buildFipsAllArch() {
+function buildFipsForAllArch() {
 
-    #echo "Building FIPS iOS libraries"
+    # echo "Building FIPS iOS libraries"
     #
-    #buildFIPS "armv7" "iOS"
-    #buildIOS "armv7"
+    # ARCHSIOS=("armv7" "armv7s", "arm64", "i386", "x86_64")
     #
-    # buildFIPS "armv7s" "iOS"
-    # buildIOS "armv7s"
+    # for ((i=0; i < ${#ARCHSIOS[@]}; i++))
+    # do
+    #     makeopensslfips "${ARCHSIOS[i]}"
+    #     buildFIPS "${ARCHSIOS[i]}" "iOS"
+    #     buildIOS "${ARCHSIOS[i]}"
+    # done
     #
-    #buildFIPS "arm64" "iOS"
-    #buildIOS "arm64"
+    # echo "Building FIPS OSX libraries"
     #
-    #buildFIPS "i386" "iOS"
-    #buildIOS "i386"
+    # ARCHSOSX=("i386", "x86_64")
     #
-    #buildFIPS "x86_64" "iOS"
-    #buildIOS "x86_64"
-
-    echo "Building FIPS OSX libraries"
-
-    #buildFIPS "i386" "OSX"
-    #buildMac "i386"
+    # for ((i=0; i < ${#ARCHSIOS[@]}; i++))
+    # do
+    #     makeopensslfips "${ARCHSIOS[i]}"
+    #     buildFIPS "${ARCHSIOS[i]}" "iOS"
+    #     buildIOS "${ARCHSIOS[i]}"
+    # done
 
     buildFIPS "x86_64" "OSX"
     buildMac "x86_64"
 }
 
-function buildIncore()
-{
+function buildIncore() {
     resetFIPS
 	resetIncore
 	pushd "${FIPS_VERSION}" > /dev/null
@@ -426,8 +426,8 @@ pushd . > /dev/null
 	popd > /dev/null
 }
 
-function resetIncore()
-{
+function resetIncore() {
+
     resetEnvironment
 
     rm -rf "${INCORE_VERSION}"
@@ -439,8 +439,8 @@ function resetIncore()
 	cp incore_macho.c "${FIPS_VERSION}/iOS"
 }
 
-function resetFIPS()
-{
+function resetFIPS() {
+
     resetEnvironment
 
 	rm -rf "${FIPS_VERSION}"
@@ -451,8 +451,7 @@ function resetFIPS()
 	chmod +x "${FIPS_VERSION}/Configure"
 }
 
-function resetOpenSSL()
-{
+function resetOpenSSL() {
 	resetEnvironment
 
     rm -rf "${OPENSSL_VERSION}"
@@ -463,16 +462,14 @@ function resetOpenSSL()
 	chmod +x "${OPENSSL_VERSION}/Configure"
 }
 
-function cleanupTemp()
-{
+function cleanupTemp() {
 	echo "Cleaning up /tmp"
 
 	rm -rf /private/tmp/${OPENSSL_VERSION}-*
 	rm -rf /private/tmp/${FIPS_VERSION}-*
 }
 
-function cleanupAll()
-{
+function cleanupAll() {
     echo "Cleaning up Everything"
 
     cleanupTemp
@@ -485,7 +482,7 @@ function cleanupAll()
 
 function resetEnvironment {
 
-    echo "Reseting Environment Variables"
+    echo "Resetting Environment Variables"
 
     unset MACHINE
     unset SYSTEM
@@ -496,6 +493,12 @@ function resetEnvironment {
     unset INSTALL_PREFIX
     unset cross_arch
 }
+
+function setEnvironment {
+
+    DEVELOPER=`xcode-select -print-path`
+}
+
 
 #   Main Function Call
 main

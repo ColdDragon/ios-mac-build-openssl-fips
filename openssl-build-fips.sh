@@ -43,7 +43,7 @@ function main()
     createFatLibraries
 
 #   Finish clean
-    cleanupAll
+    # cleanupAll
 
     echo "Done..."
     echo "Add the openssl directory in ${PWD}/fips_enabled_openssl to your xcode project"
@@ -174,7 +174,8 @@ function buildFipsForAllArch() {
 
     echo "Building FIPS iOS libraries"
 
-    ARCHSIOS=("armv7" "armv7s", "arm64", "i386", "x86_64")
+#   Not Working "armv7s"
+    ARCHSIOS=("armv7" "arm64" "i386" "x86_64")
 
     for ((i=0; i < ${#ARCHSIOS[@]}; i++))
     do
@@ -185,13 +186,13 @@ function buildFipsForAllArch() {
 
     echo "Building FIPS OSX libraries"
 
-    ARCHSOSX=("i386", "x86_64")
+    ARCHSOSX=("i386" "x86_64")
 
-    for ((i=0; i < ${#ARCHSIOS[@]}; i++))
+    for ((i=0; i < ${#ARCHSOSX[@]}; i++))
     do
-        makeopensslfips "${ARCHSIOS[i]}"
-        buildFIPS "${ARCHSIOS[i]}" "iOS"
-        buildMac "${ARCHSIOS[i]}"
+        makeopensslfips "${ARCHSOSX[i]}"
+        buildFIPS "${ARCHSOSX[i]}" "OSX"
+        buildMac "${ARCHSOSX[i]}"
     done
 
 # Testing
@@ -199,8 +200,8 @@ function buildFipsForAllArch() {
     # buildFIPS "x86_64" "OSX"
     # buildMac "x86_64"
 
-    # buildFIPS "armv7" "iOS"
-    # buildIOS "armv7"
+    # buildFIPS "armv7s" "iOS"
+    # buildIOS "armv7s"
 }
 
 function buildIncore() {
@@ -383,7 +384,7 @@ function buildIOS()
 
 	echo "Building ${OPENSSL_VERSION} for ${PLATFORM} ${IOS_SDK_VERSION} ${ARCH}"
 
-   ./Configure fips no-asm no-shared no-async no-ssl2 no-ssl3 no-ec2m iphoneos-cross --prefix="/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}" --openssldir="/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}" --with-fipsdir="/private/tmp/${FIPS_VERSION}-${ARCH}" &> "/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}.log"
+   ./Configure fips no-asm no-shared no-async no-ssl2 no-ssl3 no-ec2m no-deprecated iphoneos-cross --prefix="/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}" --openssldir="/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}" --with-fipsdir="/private/tmp/${FIPS_VERSION}-${ARCH}" &> "/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}.log"
 
    	# add -isysroot to CC=
     sed -ie "s!^CFLAG=!CFLAG=-isysroot ${CROSS_TOP}/SDKs/${CROSS_SDK} -miphoneos-version-min=${IOS_MIN_SDK_VERSION} !" "Makefile"

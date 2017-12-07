@@ -175,6 +175,7 @@ function buildFipsForAllArch() {
     echo "Building FIPS iOS libraries"
 
 #   Not Working "armv7s"
+#   https://github.com/openssl/openssl/issues/2927
     ARCHSIOS=("armv7" "arm64" "i386" "x86_64")
 
     for ((i=0; i < ${#ARCHSIOS[@]}; i++))

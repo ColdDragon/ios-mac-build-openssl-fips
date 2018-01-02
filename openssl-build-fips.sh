@@ -9,6 +9,19 @@
 # Peter Steinberger, PSPDFKit GmbH, @steipete.
 # Felix Schwarz, IOSPIRIT GmbH, @felix_schwarz.
 # Nilesh Jaiswal, @nilesh1883.
+ENABLE_BITCODE=$1
+BITCODE_OPTION=
+OUTPUT="out"
+if [[ "${ENABLE_BITCODE}" == "yes" ]]; then
+    BITCODE_OPTION=-fembed-bitcode
+	OUTPUT+="_BITCODE"
+fi
+ENABLE_FIPS=$2
+if [[ "${ENABLE_FIPS}" == "" ]]; then
+    ENABLE_FIPS=no
+elif [[ "${ENABLE_FIPS}" == "yes" ]]; then
+	OUTPUT+="_FIPS"
+fi
 
 function main() {
 
@@ -52,31 +65,31 @@ function main() {
     cleanupAll
 
     echo "Done..."
-    echo "Add the openssl directory in ${PWD}/fips_enabled_openssl to your xcode project"
+    echo "Add the openssl directory in ${PWD}/$OUTPUT to your xcode project"
 }
 
 function usage(){
-	echo "usage: $0 [iOS SDK version (defaults to latest)] [tvOS SDK version (defaults to latest)] [OS X minimum deployment target (defaults to 10.7)]"
+	echo "usage: $0 [enable bitcode] [eable fips] [iOS SDK version (defaults to latest)] [OS X minimum deployment target (defaults to 10.7)]"
 	exit 127
 }
 
 function setDeploymentTargets() {
 
-    if [ -z $1 ]; then
-        IOS_SDK_VERSION="" #"11.2"
-        IOS_MIN_SDK_VERSION="9.3"
+    if [ -z $3 ]; then
+        IOS_SDK_VERSION="11.2"
+        IOS_MIN_SDK_VERSION="8.0"
 
-        OSX_SDK_VERSION="" #"10.13"
+        OSX_SDK_VERSION="10.13"
     	OSX_DEPLOYMENT_TARGET="10.11"
     else
-    	IOS_SDK_VERSION=$1
-    	OSX_DEPLOYMENT_TARGET=$2
+    	IOS_SDK_VERSION=$3
+    	OSX_DEPLOYMENT_TARGET=$4
     fi
 }
 
 function setLibraryVersion() {
 
-    OPENSSL_VERSION="openssl-1.0.2n"
+    OPENSSL_VERSION="openssl-1.0.2n" #openssl-1.1.0g
     # FIPS_VERSION="openssl-fips-ecp-2.0.16"
     FIPS_VERSION="openssl-fips-2.0.16"
     INCORE_VERSION="ios-incore-2.0.1"
@@ -153,26 +166,26 @@ function createOutputDirectories {
     echo "Removing old output directories"
 
     rm -rf include/openssl/* lib/*
-    rm -rf fips_enabled_openssl
+    rm -rf $OUTPUT
 
     echo "Creating output directories"
     mkdir -p lib
     mkdir -p include/openssl/
-    mkdir -p fips_enabled_openssl
-    mkdir -p fips_enabled_openssl/openssl/bin
-    mkdir -p fips_enabled_openssl/openssl/iOS
-    mkdir -p fips_enabled_openssl/openssl/mac
+    mkdir -p $OUTPUT
+    mkdir -p $OUTPUT/openssl/bin
+    mkdir -p $OUTPUT/openssl/iOS
+    mkdir -p $OUTPUT/openssl/mac
 }
 
 function createOutputPackage() {
 
-    cp lib/libssl_iOS.a fips_enabled_openssl/openssl/iOS/libssl.a
-    cp lib/libcrypto_iOS.a fips_enabled_openssl/openssl/iOS/libcrypto.a
-    cp lib/libssl_mac.a fips_enabled_openssl/openssl/mac/libssl.a
-    cp lib/libcrypto_mac.a fips_enabled_openssl/openssl/mac/libcrypto.a
-    cp /usr/local/bin/incore_macho fips_enabled_openssl/openssl/bin/incore_macho
-    cp -r /private/tmp/${OPENSSL_VERSION}-iOS-armv7/include fips_enabled_openssl/openssl/include
-    cp /private/tmp/${FIPS_VERSION}-armv7/lib/fips_premain.c fips_enabled_openssl/openssl/fips_premain.c
+    cp lib/libssl_iOS.a $OUTPUT/openssl/iOS/libssl.a
+    cp lib/libcrypto_iOS.a $OUTPUT/openssl/iOS/libcrypto.a
+    cp lib/libssl_mac.a $OUTPUT/openssl/mac/libssl.a
+    cp lib/libcrypto_mac.a $OUTPUT/openssl/mac/libcrypto.a
+    cp /usr/local/bin/incore_macho $OUTPUT/openssl/bin/incore_macho
+    cp -r /private/tmp/${OPENSSL_VERSION}-iOS-armv7/include $OUTPUT/openssl/include
+    cp /private/tmp/${FIPS_VERSION}-armv7/lib/fips_premain.c $OUTPUT/openssl/fips_premain.c
 }
 
 function buildFipsForAllArch() {
@@ -191,7 +204,8 @@ function buildFipsForAllArch() {
 
      echo "Building FIPS OSX libraries"
 
-     ARCHSOSX=("i386" "x86_64")
+    ARCHSOSX=("i386" "x86_64")
+#    ARCHSOSX=("x86_64")
 
      for ((i=0; i < ${#ARCHSOSX[@]}; i++))
      do
@@ -246,25 +260,26 @@ function setEnvironmentIncore {
 	export CROSS_TOP="${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer"
 	export CROSS_SDK="${PLATFORM}${IOS_SDK_VERSION}.sdk"
 	export BUILD_TOOLS="${DEVELOPER}"
-	export CC="${BUILD_TOOLS}/usr/bin/gcc -fembed-bitcode"
+	export CC="${BUILD_TOOLS}/usr/bin/gcc ${BITCODE_OPTION}"
 }
 
 function buildFIPS() {
+	if [[ "${ENABLE_FIPS}" == "yes" ]]; then
+		setEnvironmentFIPS $1 $2
 
-    setEnvironmentFIPS $1 $2
+		echo "Building ${FIPS_VERSION} for ${ARCH} and ${OS}"
 
-    echo "Building ${FIPS_VERSION} for ${ARCH} and ${OS}"
+		./Configure no-asm no-shared no-async no-ec2m ${TARGET} --openssldir="/private/tmp/${FIPS_VERSION}-${ARCH}" &> "/private/tmp/${FIPS_VERSION}-${ARCH}.log"
 
-    ./Configure no-asm no-shared no-async ${TARGET} --openssldir="/private/tmp/${FIPS_VERSION}-${ARCH}" &> "/private/tmp/${FIPS_VERSION}-${ARCH}.log"
+		if [[ "${OS}" == "iOS" ]]; then
+			sed -ie "s!^CFLAG=!CFLAG=-isysroot ${CROSS_TOP}/SDKs/${CROSS_SDK} -miphoneos-version-min=${IOS_MIN_SDK_VERSION} !" "Makefile"
+		fi
 
-    if [[ "${OS}" == "iOS" ]]; then
-        sed -ie "s!^CFLAG=!CFLAG=-isysroot ${CROSS_TOP}/SDKs/${CROSS_SDK} -miphoneos-version-min=${IOS_MIN_SDK_VERSION} !" "Makefile"
-    fi
-
-	make >> "/private/tmp/${FIPS_VERSION}-${ARCH}.log" 2>&1
-	make install >> "/private/tmp/${FIPS_VERSION}-${ARCH}.log" 2>&1
-	make clean >> "/private/tmp/${FIPS_VERSION}-${ARCH}.log" 2>&1
-	popd > /dev/null
+		make >> "/private/tmp/${FIPS_VERSION}-${ARCH}.log" 2>&1
+		make install >> "/private/tmp/${FIPS_VERSION}-${ARCH}.log" 2>&1
+		make clean >> "/private/tmp/${FIPS_VERSION}-${ARCH}.log" 2>&1
+		popd > /dev/null
+	fi
 }
 
 function setEnvironmentFIPS {
@@ -295,9 +310,9 @@ function setEnvironmentFIPS {
     export BUILD_TOOLS="${DEVELOPER}"
 
     if [[ "${OS}" == "iOS" ]]; then
-        export CC="${BUILD_TOOLS}/usr/bin/gcc -fembed-bitcode -miphoneos-version-min=${DEPLOYMENT_TARGET}"
+        export CC="${BUILD_TOOLS}/usr/bin/gcc ${BITCODE_OPTION} -miphoneos-version-min=${DEPLOYMENT_TARGET}"
     else
-        export CC="${BUILD_TOOLS}/usr/bin/gcc -fembed-bitcode -mmacosx-version-min=${DEPLOYMENT_TARGET}"
+        export CC="${BUILD_TOOLS}/usr/bin/gcc ${BITCODE_OPTION} -mmacosx-version-min=${DEPLOYMENT_TARGET}"
     fi
 
     if [[ "${OS}" == "iOS" ]]; then
@@ -349,7 +364,11 @@ function buildMac() {
 
     setEnvironmentOSX $1
 
-    ./Configure fips no-shared no-async no-ssl3 ${TARGET} --prefix="/private/tmp/${OPENSSL_VERSION}-OSX-${ARCH}" --openssldir="/private/tmp/${OPENSSL_VERSION}-OSX-${ARCH}" --with-fipslibdir="/private/tmp/${FIPS_VERSION}-${ARCH}/lib/"  --with-fipsdir="/private/tmp/${FIPS_VERSION}-${ARCH}" &> "/private/tmp/${OPENSSL_VERSION}-OSX-${ARCH}.log"
+    if [[ "${ENABLE_FIPS}" == "yes" ]]; then
+		./Configure fips no-shared no-async no-ssl3 no-ec2m ${TARGET} --prefix="/private/tmp/${OPENSSL_VERSION}-OSX-${ARCH}" --openssldir="/private/tmp/${OPENSSL_VERSION}-OSX-${ARCH}" --with-fipslibdir="/private/tmp/${FIPS_VERSION}-${ARCH}/lib/"  --with-fipsdir="/private/tmp/${FIPS_VERSION}-${ARCH}" &> "/private/tmp/${OPENSSL_VERSION}-OSX-${ARCH}.log"
+    else
+		./Configure no-shared no-async no-ssl3 no-ec2m ${TARGET} --prefix="/private/tmp/${OPENSSL_VERSION}-OSX-${ARCH}" --openssldir="/private/tmp/${OPENSSL_VERSION}-OSX-${ARCH}" &> "/private/tmp/${OPENSSL_VERSION}-OSX-${ARCH}.log"
+    fi
 
     echo "Done Configuring For OSX"
 
@@ -375,7 +394,7 @@ function setEnvironmentOSX {
     fi
 
     export BUILD_TOOLS="${DEVELOPER}"
-    export CC="${CLANG} -fembed-bitcode -mmacosx-version-min=${OSX_DEPLOYMENT_TARGET}"
+    export CC="${CLANG} ${BITCODE_OPTION} -mmacosx-version-min=${OSX_DEPLOYMENT_TARGET}"
 
     pushd . > /dev/null
     cd "${OPENSSL_VERSION}"
@@ -387,7 +406,11 @@ function buildIOS()
 
 	echo "Building ${OPENSSL_VERSION} for ${PLATFORM} ${IOS_SDK_VERSION} ${ARCH}"
 
-   ./Configure fips no-asm no-shared no-async no-ssl2 no-ssl3 no-deprecated  ${TARGET} --prefix="/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}" --openssldir="/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}" --with-fipsdir="/private/tmp/${FIPS_VERSION}-${ARCH}" &> "/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}.log"
+    if [[ "${ENABLE_FIPS}" == "yes" ]]; then
+	./Configure fips no-asm no-shared no-async no-ssl2 no-ssl3 no-ec2m no-deprecated iphoneos-cross --prefix="/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}" --openssldir="/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}" --with-fipsdir="/private/tmp/${FIPS_VERSION}-${ARCH}" &> "/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}.log"
+    else
+	./Configure no-asm no-shared no-async no-ssl2 no-ssl3 no-ec2m no-deprecated iphoneos-cross --prefix="/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}" --openssldir="/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}" &> "/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}.log"
+    fi
 
    	# add -isysroot to CC=
     sed -ie "s!^CFLAG=!CFLAG=-isysroot ${CROSS_TOP}/SDKs/${CROSS_SDK} -miphoneos-version-min=${IOS_MIN_SDK_VERSION} !" "Makefile"
@@ -451,7 +474,7 @@ function setEnvironmentiOS {
     export SYSTEM
     export BUILD
 
-    export CC="${BUILD_TOOLS}/usr/bin/gcc -fembed-bitcode -mios-version-min=${IOS_MIN_SDK_VERSION} -arch ${ARCH}"
+    export CC="${BUILD_TOOLS}/usr/bin/gcc ${BITCODE_OPTION} -mios-version-min=${IOS_MIN_SDK_VERSION} -arch ${ARCH}"
 }
 
 function resetIncore() {
@@ -505,7 +528,7 @@ function cleanupAll() {
     rm -rf include/openssl/* lib/*
     rm -rf ${OPENSSL_VERSION}
     rm -rf ${FIPS_VERSION}
-    rm -rf "openssl-fips-2.0.1"
+#    rm -rf "openssl-fips-2.0.1"
 }
 
 function resetEnvironment {

@@ -1,6 +1,6 @@
 iOS/Mac용 openssl(fips)을 빌드하는 방법
 
-주 내용은 https://wiki.openssl.org/index.php/Android 를 참조하였습니다.
+주 내용은 https://wiki.openssl.org/index.php/Compilation_and_Installation 를 참조하였습니다.
 
 테스트 환경 : CentOS release 6.7
 

@@ -204,8 +204,7 @@ function buildFipsForAllArch() {
 
      echo "Building FIPS OSX libraries"
 
-    ARCHSOSX=("i386" "x86_64")
-#    ARCHSOSX=("x86_64")
+     ARCHSOSX=("i386" "x86_64")
 
      for ((i=0; i < ${#ARCHSOSX[@]}; i++))
      do
@@ -374,6 +373,8 @@ function buildMac() {
 
     echo "Done Configuring For OSX"
 
+    make clean
+    make depend
     make >> "/private/tmp/${OPENSSL_VERSION}-OSX-${ARCH}.log" 2>&1
     make install_sw >> "/private/tmp/${OPENSSL_VERSION}-OSX-${ARCH}.log" 2>&1
     make clean >> "/private/tmp/${OPENSSL_VERSION}-OSX-${ARCH}.log" 2>&1
@@ -404,20 +405,27 @@ function setEnvironmentOSX {
 
 function buildIOS()
 {
-    OPENSSL_OPTION="no-asm no-shared no-async no-comp no-hw no-engine no-ssl2 no-ssl3 no-idea no-mdc2 no-rc5 no-ec2m no-deprecated iphoneos-cross"   
+    OPENSSL_OPTION="no-asm no-shared no-async no-ssl2 no-ssl3 no-idea no-mdc2 no-rc5 no-ec2m no-deprecated"  
     setEnvironmentiOS $1
 
 	echo "Building ${OPENSSL_VERSION} for ${PLATFORM} ${IOS_SDK_VERSION} ${ARCH}"
 
     if [[ "${ENABLE_FIPS}" == "yes" ]]; then
-	./Configure fips ${OPENSSL_OPTION} --prefix="/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}" --openssldir="/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}" --with-fipsdir="/private/tmp/${FIPS_VERSION}-${ARCH}" &> "/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}.log"
+	./Configure fips ${OPENSSL_OPTION} ${TARGET} --prefix="/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}" --openssldir="/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}" --with-fipsdir="/private/tmp/${FIPS_VERSION}-${ARCH}" &> "/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}.log"
     else
-	./Configure ${OPENSSL_OPTION} --prefix="/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}" --openssldir="/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}" &> "/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}.log"
+	./Configure ${OPENSSL_OPTION} ${TARGET} --prefix="/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}" --openssldir="/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}" &> "/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}.log"
     fi
 
    	# add -isysroot to CC=
     sed -ie "s!^CFLAG=!CFLAG=-isysroot ${CROSS_TOP}/SDKs/${CROSS_SDK} -miphoneos-version-min=${IOS_MIN_SDK_VERSION} !" "Makefile"
 
+
+    if [[ "${ARCH}" == "armv7" ]]; then
+        sed -ie "s!-fomit-frame-pointer!-fno-omit-frame-pointer!" "Makefile"
+    fi
+	
+    make clean
+    make depend
     echo "Running make"
     make >> "/private/tmp/${OPENSSL_VERSION}-iOS-${ARCH}.log" 2>&1
     echo "Running make install"
@@ -453,7 +461,7 @@ function setEnvironmentiOS {
         TARGET="darwin64-x86_64-cc"
 	elif [[ "${ARCH}" == "i386" ]]; then
         TARGET="darwin-i386-cc"
-	fi
+    fi
 
     export $PLATFORM
 
@@ -531,7 +539,7 @@ function cleanupAll() {
     rm -rf include/openssl/* lib/*
     rm -rf ${OPENSSL_VERSION}
     rm -rf ${FIPS_VERSION}
-#    rm -rf "openssl-fips-2.0.1"
+#     rm -rf "openssl-fips-2.0.1"
 }
 
 function resetEnvironment {

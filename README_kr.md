@@ -24,3 +24,11 @@ Openssl : openssl-1.0.2n, openssl-fips-ecp-2.0.16(특허 문제)
 
 4. macos sdk version : 기본값(10.13)
 
+
+ui 절차
+
+1. fips모드 적용을 위해선 incore_macho를 i386으로 빌드한 후 /usr/local/bin에 넣어두고 이후에 사용
+
+2. fips_premain.c는 ui에서 최종 실행파일을 만들 때 같이 빌드해야 하고 fips모드로 빌드한 libcrypto.a파일도 이 때 같이 링크해야 함
+
+3. fips_pi툴을 통해 fingerprint가 유효한지 

@@ -2,9 +2,9 @@ iOS/Mac용 openssl(fips)을 빌드하는 방법
 
 주 내용은 https://wiki.openssl.org/index.php/Compilation_and_Installation 를 참조하였습니다.
 
-테스트 환경 : CentOS release 6.7
+테스트 환경 : macOS High Sierra V 10.13.6 Xcode 9.2 
 
-Openssl : openssl-1.0.2n, openssl-fips-ecp-2.0.16(특허 문제)
+Openssl : openssl-1.0.2q, openssl-fips-ecp-2.0.16(특허 문제)
 
 - 절차
 

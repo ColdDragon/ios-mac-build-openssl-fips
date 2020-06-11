@@ -253,11 +253,12 @@ function buildIncore() {
 
     setEnvironmentIncore
 
-	./config &> "${TEMP}/${FIPS_VERSION}-Incore.log"
-	make >> "${TEMP}/${FIPS_VERSION}-Incore.log" 2>&1
-	echo "Building Incore"
+    ./Configure darwin64-x86_64-cc #&> "${TEMP}/${FIPS_VERSION}-Incore.log"
+	# ./config &> "${TEMP}/${FIPS_VERSION}-Incore.log"
+	make #>> "${TEMP}/${FIPS_VERSION}-Incore.log" 2>&1
+	echo "Building Incore #2 "$(pwd)
 	cd iOS
-	make >> "${TEMP}/${FIPS_VERSION}-Incore.log" 2>&1
+	make #>> "${TEMP}/${FIPS_VERSION}-Incore.log" 2>&1
 	echo "Copying incore_macho to /usr/local/bin"
 	cp incore_macho /usr/local/bin
 	popd > /dev/null
@@ -274,11 +275,11 @@ function setEnvironmentIncore {
 
     DEVELOPER=`xcode-select -print-path`
     SYSTEM="darwin"
-	MACHINE="i386"
+#	MACHINE="i386"
 
-	SYSTEM="Darwin"
-	MACHINE="i386"
-	KERNEL_BITS=32
+#	SYSTEM="Darwin"
+	MACHINE=x86_64
+	KERNEL_BITS=64
 
     export MACHINE
 	export SYSTEM
@@ -289,7 +290,7 @@ function setEnvironmentIncore {
 	export CC="${BUILD_TOOLS}/usr/bin/gcc ${BITCODE_OPTION}"
 
     export HOSTCC=/usr/bin/cc
-	export HOSTCFLAGS="-arch i386"
+	export HOSTCFLAGS="-arch x86_64"
 }
 
 function buildFIPS() {
@@ -390,7 +391,7 @@ function setEnvironmentFIPS {
 	# fips/sha/Makefile uses HOSTCC for building fips_standalone_sha1
 	#
 	export HOSTCC=/usr/bin/cc
-    export HOSTCFLAGS="-arch i386"
+    export HOSTCFLAGS="-arch x86_64"
 
 	pushd . > /dev/null
 	cd "${FIPS_VERSION}"
@@ -504,7 +505,7 @@ function buildIOS()
     export ARCH=${ARCH}
     export PLATFORM=${PLATFORM}
     export HOSTCC=/usr/bin/cc
-    export HOSTCFLAGS="-arch i386"
+    export HOSTCFLAGS="-arch x86_64"
     export FIPS_SIG=/usr/local/bin/incore_macho
 
     export CC=clang;
@@ -594,7 +595,7 @@ function setEnvironmentiOS {
     echo "Building ${OPENSSL_VERSION} for ${PLATFORM} ${IOS_SDK_VERSION} ${ARCH}"
 
     export HOSTCC=/usr/bin/cc
-    export HOSTCFLAGS="-arch i386"
+    export HOSTCFLAGS="-arch x86_64"
     export IOS_TARGET=darwin-iphoneos-cross
     export FIPS_SIG=/usr/local/bin/incore_macho
     cross_arch="-armv7"

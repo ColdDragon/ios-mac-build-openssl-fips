@@ -222,7 +222,7 @@ function buildFipsForAllArch() {
 
     for ((i=0; i < ${#ARCHSOSX[@]}; i++))
     do
-        buildFIPS "${ARCHSOSX[i]}" "OSX"
+#        buildFIPS "${ARCHSOSX[i]}" "OSX"
         buildMac "${ARCHSOSX[i]}"
     done
 
@@ -617,7 +617,7 @@ function resetIncore() {
 
 	echo "Unpacking incore"
 
-	tar xfz "${INCORE_VERSION}.zip"
+	tar xfz "${INCORE_VERSION}.tar.gz"
 	cp -R "openssl-fips-2.0.1/iOS" ${FIPS_VERSION}
 	cp incore_macho.c "${FIPS_VERSION}/iOS"
 }

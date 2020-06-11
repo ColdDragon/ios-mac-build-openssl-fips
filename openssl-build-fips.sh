@@ -24,6 +24,19 @@ elif [[ "${ENABLE_FIPS}" == "yes" ]]; then
 	OUTPUT+="_FIPS"
 fi
 
+_OPENSSL_VERSION=$3
+if [ -e ${_OPENSSL_VERSION}.tar.gz ]; then
+	OPENSSL_VERSION=${_OPENSSL_VERSION}
+fi
+_FIPS_VERSION=$4
+if [ -e ${_FIPS_VERSION}.tar.gz ]; then
+	FIPS_VERSION=${_FIPS_VERSION}
+fi
+_INCORE_VERSION=$5
+if [ -e ${_INCORE_VERSION}.tar.gz ]; then
+	INCORE_VERSION=${_INCORE_VERSION}
+fi
+
 function main() {
 
     set -x
@@ -94,9 +107,15 @@ function setDeploymentTargets() {
 
 function setLibraryVersion() {
 
-    OPENSSL_VERSION="openssl-1.0.2q" #openssl-1.1.0g
-    FIPS_VERSION="openssl-fips-ecp-2.0.16"
-    INCORE_VERSION="ios-incore-2.0.1"
+	if [[ "${OPENSSL_VERSION}" == "" ]]; then
+		OPENSSL_VERSION="openssl-1.0.2r" #openssl-1.1.0g
+	fi
+	if [[ "${FIPS_VERSION}" == "" ]]; then
+		FIPS_VERSION="openssl-fips-ecp-2.0.16"
+	fi
+	if [[ "${INCORE_VERSION}" == "" ]]; then
+		INCORE_VERSION="ios-incore-2.0.1"
+	fi
 }
 
 function downloadSource() {
@@ -156,13 +175,13 @@ function createFatLibraries() {
 
     echo "Create Fat libcrypto OSX libraries"
     lipo -create -output lib/libcrypto_mac.a \
-       "${TEMP}/${OPENSSL_VERSION}-OSX-x86_64/lib/libcrypto.a"\
-       "${TEMP}/${OPENSSL_VERSION}-OSX-i386/lib/libcrypto.a"
+       "${TEMP}/${OPENSSL_VERSION}-OSX-x86_64/lib/libcrypto.a"
+#       "${TEMP}/${OPENSSL_VERSION}-OSX-i386/lib/libcrypto.a"
 
     echo "Create Fat libssl OSX libraries"
     lipo -create -output lib/libssl_mac.a \
-       "${TEMP}/${OPENSSL_VERSION}-OSX-x86_64/lib/libssl.a" \
-       "${TEMP}/${OPENSSL_VERSION}-OSX-i386/lib/libssl.a"
+       "${TEMP}/${OPENSSL_VERSION}-OSX-x86_64/lib/libssl.a"
+#       "${TEMP}/${OPENSSL_VERSION}-OSX-i386/lib/libssl.a"
 }
 
 function createOutputDirectories {
@@ -198,7 +217,8 @@ function buildFipsForAllArch() {
 
     echo "Building FIPS OSX libraries"
 
-    ARCHSOSX=("i386" "x86_64")
+#    ARCHSOSX=("i386" "x86_64")
+	ARCHSOSX=("x86_64")
 
     for ((i=0; i < ${#ARCHSOSX[@]}; i++))
     do
@@ -397,7 +417,7 @@ function buildMac() {
     fi
 
     export HOSTCC=/usr/bin/cc
-	export HOSTCFLAGS="-arch i386"
+	export HOSTCFLAGS="-arch x86_64"
 
     if [[ "${ENABLE_FIPS}" == "yes" ]]; then
 		./Configure fips ${TARGET} ${OPENSSL_OPTION} --prefix="${TEMP}/${OPENSSL_VERSION}-OSX-${ARCH}" --openssldir="${TEMP}/${OPENSSL_VERSION}-OSX-${ARCH}" --with-fipslibdir="${TEMP}/${FIPS_VERSION}-${ARCH}/lib/"  --with-fipsdir="${TEMP}/${FIPS_VERSION}-${ARCH}" &> "${TEMP}/${OPENSSL_VERSION}-OSX-${ARCH}.log"
@@ -454,7 +474,7 @@ function setEnvironmentOSX {
 	export BUILD
 
     export HOSTCC=/usr/bin/cc
-	export HOSTCFLAGS="-arch i386"
+	export HOSTCFLAGS="-arch x86_64"
 
     pushd . > /dev/null
     cd "${OPENSSL_VERSION}"

@@ -643,6 +643,16 @@ function resetOpenSSL() {
 	echo "Unpacking openssl"
 	tar xfz "${OPENSSL_VERSION}.tar.gz"
 	chmod +x "${OPENSSL_VERSION}/Configure"
+	
+//modify secure coding
+    cp -f ${OPENSSL_VERSION}/crypto/mem.c ${OPENSSL_VERSION}/crypto/mem_old.c
+    cat ${OPENSSL_VERSION}/crypto/mem.c | sed 's/strcpy(ret, str);/memset(ret, 0, strlen(str) + 1);\
+    \#ifdef _WIN32\
+    strcpy_s(ret, str, strlen(str));\
+    \#else	\
+    strncpy(ret, str, strlen(str));\
+    \#endif/g' > mem_new.c	
+    cp -f mem_new.c ${OPENSSL_VERSION}/crypto/mem.c	
 }
 
 function cleanupTemp() {

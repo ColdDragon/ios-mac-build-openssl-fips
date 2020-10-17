@@ -66,10 +66,10 @@ function main() {
     if [[ "${ENABLE_FIPS}" == "yes" ]]; then
 #   Building Incore Library
         buildIncore
+    fi
 
 #   Building FIPS and OpenSSL for All Arch
-        buildFipsForAllArch
-    fi
+    buildFipsForAllArch
 
 #   Creating combined fat libraries
     createFatLibraries

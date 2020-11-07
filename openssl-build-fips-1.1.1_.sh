@@ -215,26 +215,27 @@ function createOutputPackage() {
 
 function buildFipsForAllArch() {
 
-    echo "Building FIPS OSX libraries"
+#    echo "Building FIPS OSX libraries"
 
 #    ARCHSOSX=("i386" "x86_64")
 	ARCHSOSX=("x86_64")
 
-    for ((i=0; i < ${#ARCHSOSX[@]}; i++))
-    do
+#   for ((i=0; i < ${#ARCHSOSX[@]}; i++))
+#    do
 #        buildFIPS "${ARCHSOSX[i]}" "OSX"
-        buildMac "${ARCHSOSX[i]}"
-    done
+#        buildMac "${ARCHSOSX[i]}"
+#    done
 
     echo "Building FIPS iOS libraries"
 
 #   Not Working "armv7s"
 #   https://github.com/openssl/openssl/issues/2927
-    ARCHSIOS=("armv7" "arm64" "i386" "x86_64")
+#    ARCHSIOS=("armv7" "arm64" "i386" "x86_64")
+ARCHSIOS=("i386" "x86_64")
 
     for ((i=0; i < ${#ARCHSIOS[@]}; i++))
     do
-        buildFIPS "${ARCHSIOS[i]}" "iOS"
+        #buildFIPS "${ARCHSIOS[i]}" "iOS"
         buildIOS "${ARCHSIOS[i]}"
     done
 
@@ -509,7 +510,7 @@ function buildIOS()
     else
         TARGET="ios-cross"
     fi
-
+	echo "Check ARCH:${ARCH}, TARGET:${TARGET}, PLATFORM:${PLATFORM}"
 
     export ARCH=${ARCH}
     export PLATFORM=${PLATFORM}

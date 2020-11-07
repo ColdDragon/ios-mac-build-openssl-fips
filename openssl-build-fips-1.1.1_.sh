@@ -518,7 +518,7 @@ function buildIOS()
     export HOSTCFLAGS="-arch x86_64"
     export FIPS_SIG=/usr/local/bin/incore_macho
 
-    export CC=clang;
+    export CC=cc;
     export CROSS_TOP=/Applications/Xcode.app/Contents/Developer/Platforms/${PLATFORM}.platform/Developer
     export CROSS_SDK=${PLATFORM}.sdk
     export PATH="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin:$PATH"
@@ -556,8 +556,8 @@ function buildIOS()
 #        sed -ie "s!-fomit-frame-pointer!-fno-omit-frame-pointer!" "Makefile"
 #    fi
 
-    make clean
-    make depend
+#    make clean
+#    make depend
     echo "Running make"
     make >> "${TEMP}/${OPENSSL_VERSION}-iOS-${ARCH}.log" 2>&1
     echo "Running make install"

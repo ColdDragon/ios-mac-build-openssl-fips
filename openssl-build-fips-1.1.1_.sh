@@ -542,16 +542,15 @@ function buildIOS()
     elif [[ "${ARCH}" == "arm64" ]]; then
         sed -ie 's!^CFLAG=!CFLAG=-arch arm64 !' 'Makefile'
     elif [[ "${ARCH}" == "i386" ]]; then
+    	sed -ie 's!CNF_CFLAGS=-arch i386!CNF_CFLAGS=-arch i386 -miphoneos-version-min=8.0.0 -fno-common -isysroot $(CROSS_TOP)/SDKs/$(CROSS_SDK)!' 'Makefile'
         sed -ie 's!^CFLAG=!CFLAG=-arch i386 !' 'Makefile'
     elif [[ "${ARCH}" == "x86_64" ]]; then
+    	sed -ie 's!CNF_CFLAGS=-arch x86_64!CNF_CFLAGS=-arch x86_64 -miphoneos-version-min=8.0.0 -fno-common -isysroot $(CROSS_TOP)/SDKs/$(CROSS_SDK)!' 'Makefile'
         sed -ie 's!^CFLAG=!CFLAG=-arch x86_64 !' 'Makefile'
     fi
 
     if [[ "${ARCH}" == "i386" || "${ARCH}" == "x86_64" ]]; then
-    
-    sed -ie 's!CNF_CFLAGS=-arch ${ARCH}!CNF_CFLAGS=-arch ${ARCH} -miphoneos-version-min=8.0.0 -fno-common -isysroot $(CROSS_TOP)/SDKs/$(CROSS_SDK)!' 'Makefile'
-    
-      #  sed -ie 's!$(CROSS_TOP)/SDKs/$(CROSS_SDK)!/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk -miphoneos-version-min=8.0!' 'Makefile'
+        sed -ie 's!$(CROSS_TOP)/SDKs/$(CROSS_SDK)!/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk -miphoneos-version-min=8.0!' 'Makefile'
     else
         sed -ie 's!$(CROSS_TOP)/SDKs/$(CROSS_SDK)!/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk -miphoneos-version-min=8.0!' 'Makefile'
     fi

@@ -186,74 +186,66 @@ function createFatLibraries() {
 
 function createOutputDirectories {
 
-    echo "Removing old output directories"
+	echo "Removing old output directories"
 
-    rm -rf include/openssl/* lib/*
-    rm -rf $OUTPUT
-    rm -rf $TEMP
+	rm -rf include/openssl/* lib/*
+	rm -rf $OUTPUT
+	rm -rf $TEMP
 
-    echo "Creating output directories"
-    mkdir -p lib
-    mkdir -p include/openssl/
-    mkdir -p $OUTPUT
-    mkdir -p $OUTPUT/openssl/bin
-    mkdir -p $OUTPUT/openssl/iOS
-    mkdir -p $OUTPUT/openssl/mac
-    mkdir -p $TEMP
+	echo "Creating output directories"
+	mkdir -p lib
+	mkdir -p include/openssl/
+	mkdir -p $OUTPUT
+	mkdir -p $OUTPUT/openssl/bin
+	mkdir -p $OUTPUT/openssl/iOS
+	mkdir -p $OUTPUT/openssl/mac
+	mkdir -p $TEMP
 }
 
 function createOutputPackage() {
 
-    cp lib/libssl_iOS.a $OUTPUT/openssl/iOS/libssl.a
-    cp lib/libcrypto_iOS.a $OUTPUT/openssl/iOS/libcrypto.a
-    cp lib/libssl_mac.a $OUTPUT/openssl/mac/libssl.a
-    cp lib/libcrypto_mac.a $OUTPUT/openssl/mac/libcrypto.a
-    cp /usr/local/bin/incore_macho $OUTPUT/openssl/bin/incore_macho
-    cp -r ${TEMP}/${OPENSSL_VERSION}-iOS-armv7/include $OUTPUT/openssl/include
-    cp ${TEMP}/${FIPS_VERSION}-armv7/lib/fips_premain.c $OUTPUT/openssl/fips_premain.c
+	cp lib/libssl_iOS.a $OUTPUT/openssl/iOS/libssl.a
+	cp lib/libcrypto_iOS.a $OUTPUT/openssl/iOS/libcrypto.a
+	cp lib/libssl_mac.a $OUTPUT/openssl/mac/libssl.a
+	cp lib/libcrypto_mac.a $OUTPUT/openssl/mac/libcrypto.a
+	cp /usr/local/bin/incore_macho $OUTPUT/openssl/bin/incore_macho
+	cp -r ${TEMP}/${OPENSSL_VERSION}-iOS-armv7/include $OUTPUT/openssl/include
+	cp ${TEMP}/${FIPS_VERSION}-armv7/lib/fips_premain.c $OUTPUT/openssl/fips_premain.c
 }
 
 function buildFipsForAllArch() {
 
-    echo "Building FIPS OSX libraries"
+	echo "Building FIPS OSX libraries"
 
-#    ARCHSOSX=("i386" "x86_64")
+	#ARCHSOSX=("i386" "x86_64")
 	ARCHSOSX=("x86_64")
 
-    for ((i=0; i < ${#ARCHSOSX[@]}; i++))
-    do
-#        buildFIPS "${ARCHSOSX[i]}" "OSX"
-        buildMac "${ARCHSOSX[i]}"
-    done
+	for ((i=0; i < ${#ARCHSOSX[@]}; i++))
+	do
+		#buildFIPS "${ARCHSOSX[i]}" "OSX"
+		buildMac "${ARCHSOSX[i]}"
+	done
 
-    echo "Building FIPS iOS libraries"
+	echo "Building FIPS iOS libraries"
 
-#   Not Working "armv7s"
-#   https://github.com/openssl/openssl/issues/2927
-    ARCHSIOS=("armv7" "arm64" "i386" "x86_64")
+	#   Not Working "armv7s"
+	#   https://github.com/openssl/openssl/issues/2927
+	ARCHSIOS=("armv7" "arm64" "i386" "x86_64")
 
-    for ((i=0; i < ${#ARCHSIOS[@]}; i++))
-    do
-        buildFIPS "${ARCHSIOS[i]}" "iOS"
-        buildIOS "${ARCHSIOS[i]}"
-    done
-
-# Testing
-
-    # buildFIPS "x86_64" "OSX"
-    # buildMac "x86_64"
-
-#    buildFIPS "arm64" "iOS"
-#    buildIOS "arm64"
+	for ((i=0; i < ${#ARCHSIOS[@]}; i++))
+	do
+		buildFIPS "${ARCHSIOS[i]}" "iOS"
+		buildIOS "${ARCHSIOS[i]}"
+	done
 }
 
 function buildIncore() {
 
-    echo "Building Incore"
+	echo "Building Incore"
 
-    setEnvironmentIncore
+	setEnvironmentIncore
 
-    ./Configure darwin64-x86_64-cc #&> "${TEMP}/${FIPS_VERSION}-Incore.log"
+	./Configure darwin64-x86_64-cc #&> "${TEMP}/${FIPS_VERSION}-Incore.log"
 	# ./config &> "${TEMP}/${FIPS_VERSION}-Incore.log"
 	make #>> "${TEMP}/${FIPS_VERSION}-Incore.log" 2>&1
 	echo "Building Incore #2 "$(pwd)
@@ -267,21 +259,21 @@ function buildIncore() {
 
 function setEnvironmentIncore {
 
-    resetFIPS
+	resetFIPS
 	resetIncore
-    resetEnvironment
+	resetEnvironment
 
 	pushd "${FIPS_VERSION}" > /dev/null
 
-    DEVELOPER=`xcode-select -print-path`
-    SYSTEM="darwin"
-#	MACHINE="i386"
+	DEVELOPER=`xcode-select -print-path`
+	SYSTEM="darwin"
+	#	MACHINE="i386"
 
-#	SYSTEM="Darwin"
+	#	SYSTEM="Darwin"
 	MACHINE=x86_64
 	KERNEL_BITS=64
 
-    export MACHINE
+	export MACHINE
 	export SYSTEM
 	export KERNEL_BITS
 	export CROSS_TOP="${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer"
@@ -289,98 +281,98 @@ function setEnvironmentIncore {
 	export BUILD_TOOLS="${DEVELOPER}"
 	export CC="${BUILD_TOOLS}/usr/bin/gcc ${BITCODE_OPTION}"
 
-    export HOSTCC=/usr/bin/cc
+	export HOSTCC=/usr/bin/cc
 	export HOSTCFLAGS="-arch x86_64"
 }
 
 function buildFIPS() {
 	if [[ "${ENABLE_FIPS}" == "yes" ]]; then
-	
-    OPENSSL_OPTION="no-asm no-comp no-async no-shared no-dso no-ssl2 no-ssl3 no-hw no-engines no-idea no-mdc2 no-rc5 no-ec2m"
-    
-    setEnvironmentFIPS $1 $2
 
-    echo "Building ${FIPS_VERSION} for ${ARCH} and ${OS}"
+		OPENSSL_OPTION="no-asm no-comp no-async no-shared no-dso no-ssl2 no-ssl3 no-hw no-engines no-idea no-mdc2 no-rc5 no-ec2m"
+
+		setEnvironmentFIPS $1 $2
+
+		echo "Building ${FIPS_VERSION} for ${ARCH} and ${OS}"
 
 		./Configure ${OPENSSL_OPTION} ${TARGET} --openssldir="${TEMP}/${FIPS_VERSION}-${ARCH}" &> "${TEMP}/${FIPS_VERSION}-${ARCH}.log"
 
-    if [[ "${OS}" == "iOS" ]]; then
-        sed -ie "s!^CFLAG=!CFLAG=-isysroot ${CROSS_TOP}/SDKs/${CROSS_SDK} -miphoneos-version-min=${IOS_MIN_SDK_VERSION} !" "Makefile"
+		if [[ "${OS}" == "iOS" ]]; then
+			sed -ie "s!^CFLAG=!CFLAG=-isysroot ${CROSS_TOP}/SDKs/${CROSS_SDK} -miphoneos-version-min=${IOS_MIN_SDK_VERSION} !" "Makefile"
 		else
 			sed -ie "s!^CFLAG=!CFLAG=-isysroot $(xcrun --sdk macosx --show-sdk-path) -mmacosx-version-min=${OSX_DEPLOYMENT_TARGET} !" "Makefile"
 		fi
 
-	make >> "${TEMP}/${FIPS_VERSION}-${ARCH}.log" 2>&1
-	make install >> "${TEMP}/${FIPS_VERSION}-${ARCH}.log" 2>&1
-	make clean >> "${TEMP}/${FIPS_VERSION}-${ARCH}.log" 2>&1
-	popd > /dev/null
+		make >> "${TEMP}/${FIPS_VERSION}-${ARCH}.log" 2>&1
+		make install >> "${TEMP}/${FIPS_VERSION}-${ARCH}.log" 2>&1
+		make clean >> "${TEMP}/${FIPS_VERSION}-${ARCH}.log" 2>&1
+		popd > /dev/null
 	fi
 }
 
 function setEnvironmentFIPS {
 
-    resetFIPS
-    resetEnvironment
+	resetFIPS
+	resetEnvironment
 
-    ARCH=$1
-    OS=$2
-    DEPLOYMENT_TARGET=${IOS_MIN_SDK_VERSION}
-    DEVELOPER=`xcode-select -print-path`
+	ARCH=$1
+	OS=$2
+	DEPLOYMENT_TARGET=${IOS_MIN_SDK_VERSION}
+	DEVELOPER=`xcode-select -print-path`
 
-    if [[ "${OS}" == "iOS" ]]; then
-        if [[ "${ARCH}" == "i386" || "${ARCH}" == "x86_64" ]]; then
-    		PLATFORM="iPhoneSimulator"
-    	else
-    		PLATFORM="iPhoneOS"
-    # 		sed -ie "s!static volatile sig_atomic_t intr_signal;!static volatile intr_signal;!" "crypto/ui/ui_openssl.c"
-    	fi
-    else
-        PLATFORM="MacOSX"
-        DEPLOYMENT_TARGET=${OSX_DEPLOYMENT_TARGET}
-    fi
+	if [[ "${OS}" == "iOS" ]]; then
+		if [[ "${ARCH}" == "i386" || "${ARCH}" == "x86_64" ]]; then
+			PLATFORM="iPhoneSimulator"
+		else
+			PLATFORM="iPhoneOS"
+			# 		sed -ie "s!static volatile sig_atomic_t intr_signal;!static volatile intr_signal;!" "crypto/ui/ui_openssl.c"
+		fi
+	else
+		PLATFORM="MacOSX"
+		DEPLOYMENT_TARGET=${OSX_DEPLOYMENT_TARGET}
+	fi
 
 	export PLATFORM=$PLATFORM
-    export CROSS_TOP="${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer"
-    if [[ "${OS}" == "iOS" ]]; then
-        export CROSS_SDK="${PLATFORM}${IOS_SDK_VERSION}.sdk"
-    else
-        export CROSS_SDK="${PLATFORM}${OSX_SDK_VERSION}.sdk"
-    fi
-    export BUILD_TOOLS="${DEVELOPER}"
+	export CROSS_TOP="${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer"
+	if [[ "${OS}" == "iOS" ]]; then
+		export CROSS_SDK="${PLATFORM}${IOS_SDK_VERSION}.sdk"
+	else
+		export CROSS_SDK="${PLATFORM}${OSX_SDK_VERSION}.sdk"
+	fi
+	export BUILD_TOOLS="${DEVELOPER}"
 
-    if [[ "${OS}" == "iOS" ]]; then
-        export CC="${BUILD_TOOLS}/usr/bin/gcc ${BITCODE_OPTION} -miphoneos-version-min=${DEPLOYMENT_TARGET}"
-    else
-        export CC="${BUILD_TOOLS}/usr/bin/gcc ${BITCODE_OPTION} -mmacosx-version-min=${DEPLOYMENT_TARGET}"
-    fi
+	if [[ "${OS}" == "iOS" ]]; then
+		export CC="${BUILD_TOOLS}/usr/bin/gcc ${BITCODE_OPTION} -miphoneos-version-min=${DEPLOYMENT_TARGET}"
+	else
+		export CC="${BUILD_TOOLS}/usr/bin/gcc ${BITCODE_OPTION} -mmacosx-version-min=${DEPLOYMENT_TARGET}"
+	fi
 
-    if [[ "${OS}" == "iOS" ]]; then
-        if [[ "${ARCH}" == "x86_64" ]]; then
-            TARGET="darwin64-x86_64-cc"
-    	elif [[ "${ARCH}" == "i386" ]]; then
-            TARGET="darwin-i386-cc"
-        elif [[ "${ARCH}" == "arm64" ]]; then
-            TARGET="ios64-cross"
-    	else
-            TARGET="ios-cross"
-    	fi
-    else
-        if [[ "${ARCH}" == "i386" ]]; then
-    		TARGET="darwin-i386-cc"
-        elif [[ "${ARCH}" == "x86_64" ]]; then
-            TARGET="darwin64-x86_64-cc"
-        else
-            TARGET="darwin64-x86_64-cc"
-        fi
-    fi
+	if [[ "${OS}" == "iOS" ]]; then
+		if [[ "${ARCH}" == "x86_64" ]]; then
+			TARGET="darwin64-x86_64-cc"
+		elif [[ "${ARCH}" == "i386" ]]; then
+			TARGET="darwin-i386-cc"
+		elif [[ "${ARCH}" == "arm64" ]]; then
+			TARGET="ios64-cross"
+		else
+			TARGET="ios-cross"
+		fi
+	else
+		if [[ "${ARCH}" == "i386" ]]; then
+			TARGET="darwin-i386-cc"
+		elif [[ "${ARCH}" == "x86_64" ]]; then
+			TARGET="darwin64-x86_64-cc"
+		else
+			TARGET="darwin64-x86_64-cc"
+		fi
+	fi
 
-    if [[ "${OS}" == "iOS" ]]; then
-    	SYSTEM="iphoneos"
-    else
-    	SYSTEM="darwin"
-    fi
+	if [[ "${OS}" == "iOS" ]]; then
+		SYSTEM="iphoneos"
+	else
+		SYSTEM="darwin"
+	fi
 
-    MACHINE=`echo -"$ARCH" | sed -e 's/^-//'`
+	MACHINE=`echo -"$ARCH" | sed -e 's/^-//'`
 	BUILD="build"
 
 	export MACHINE
@@ -391,7 +383,7 @@ function setEnvironmentFIPS {
 	# fips/sha/Makefile uses HOSTCC for building fips_standalone_sha1
 	#
 	export HOSTCC=/usr/bin/cc
-    export HOSTCFLAGS="-arch x86_64"
+	export HOSTCFLAGS="-arch x86_64"
 
 	pushd . > /dev/null
 	cd "${FIPS_VERSION}"
@@ -399,231 +391,232 @@ function setEnvironmentFIPS {
 
 function buildMac() {
 
-    echo "Building ${OPENSSL_VERSION} for ${ARCH}"
+	echo "Building ${OPENSSL_VERSION} for ${ARCH}"
 
-    OPENSSL_OPTION="no-asm no-shared no-async no-ssl2 no-ssl3 no-idea no-mdc2 no-rc5 no-ec2m no-comp"
-    resetOpenSSL
-    ARCH=$1
-    pushd . > /dev/null
-    cd "${OPENSSL_VERSION}"
+	OPENSSL_OPTION="no-asm no-shared no-async no-ssl2 no-ssl3 no-idea no-mdc2 no-rc5 no-ec2m no-comp"
+	resetOpenSSL
+	ARCH=$1
+	pushd . > /dev/null
+	cd "${OPENSSL_VERSION}"
 
-    unset CC
-    unset CROSS_TOP
-    unset CROSS_SDK
+	unset CC
+	unset CROSS_TOP
+	unset CROSS_SDK
 
-    if [[ $ARCH == "x86_64" ]]; then
-        TARGET="darwin64-x86_64-cc"
-    else
-        TARGET="darwin-i386-cc"
-    fi
+	if [[ $ARCH == "x86_64" ]]; then
+		TARGET="darwin64-x86_64-cc"
+	else
+		TARGET="darwin-i386-cc"
+	fi
 
-    export HOSTCC=/usr/bin/cc
+	export HOSTCC=/usr/bin/cc
 	export HOSTCFLAGS="-arch x86_64"
 
-    if [[ "${ENABLE_FIPS}" == "yes" ]]; then
+	if [[ "${ENABLE_FIPS}" == "yes" ]]; then
 		./Configure fips ${TARGET} ${OPENSSL_OPTION} --prefix="${TEMP}/${OPENSSL_VERSION}-OSX-${ARCH}" --openssldir="${TEMP}/${OPENSSL_VERSION}-OSX-${ARCH}" --with-fipslibdir="${TEMP}/${FIPS_VERSION}-${ARCH}/lib/"  --with-fipsdir="${TEMP}/${FIPS_VERSION}-${ARCH}" &> "${TEMP}/${OPENSSL_VERSION}-OSX-${ARCH}.log"
-    else
+	else
 		./Configure ${TARGET} ${OPENSSL_OPTION} --prefix="${TEMP}/${OPENSSL_VERSION}-OSX-${ARCH}" --openssldir="${TEMP}/${OPENSSL_VERSION}-OSX-${ARCH}" &> "${TEMP}/${OPENSSL_VERSION}-OSX-${ARCH}.log"
-    fi
+	fi
 
-    if [[ "${ENABLE_BITCODE}" == "yes" ]]; then
-        sed -ie 's!^CFLAGS=!CFLAGS=-fembed-bitcode !' 'Makefile'
-    fi
-    # sed -ie "s!^CFLAG=!CFLAG=-isysroot ${CROSS_TOP}/SDKs/${CROSS_SDK} -mmacosx-version-min=${OSX_DEPLOYMENT_TARGET} !" "Makefile"
+	if [[ "${ENABLE_BITCODE}" == "yes" ]]; then
+		sed -ie 's!^CFLAGS=!CFLAGS=-fembed-bitcode !' 'Makefile'
+	fi
+	# sed -ie "s!^CFLAG=!CFLAG=-isysroot ${CROSS_TOP}/SDKs/${CROSS_SDK} -mmacosx-version-min=${OSX_DEPLOYMENT_TARGET} !" "Makefile"
 
-    echo "Done Configuring For OSX"
+	echo "Done Configuring For OSX"
 
-    make clean
-    make depend
-    make >> "${TEMP}/${OPENSSL_VERSION}-OSX-${ARCH}.log" 2>&1
-    make install_sw >> "${TEMP}/${OPENSSL_VERSION}-OSX-${ARCH}.log" 2>&1
-    make clean >> "${TEMP}/${OPENSSL_VERSION}-OSX-${ARCH}.log" 2>&1
-    popd > /dev/null
+	make clean
+	make depend
+	make >> "${TEMP}/${OPENSSL_VERSION}-OSX-${ARCH}.log" 2>&1
+	make install_sw >> "${TEMP}/${OPENSSL_VERSION}-OSX-${ARCH}.log" 2>&1
+	make clean >> "${TEMP}/${OPENSSL_VERSION}-OSX-${ARCH}.log" 2>&1
+	popd > /dev/null
 }
 
 function setEnvironmentOSX {
 
-    resetEnvironment
-    resetOpenSSL
+	resetEnvironment
+	resetOpenSSL
 
-    DEVELOPER=`xcode-select -print-path`
-    DEPLOYMENT_TARGET=${OSX_DEPLOYMENT_TARGET}
-    PLATFORM="MacOSX"
+	DEVELOPER=`xcode-select -print-path`
+	DEPLOYMENT_TARGET=${OSX_DEPLOYMENT_TARGET}
+	PLATFORM="MacOSX"
 
-    ARCH=$1
+	ARCH=$1
 
-    TARGET="darwin-i386-cc"
-    CLANG=`xcrun -f clang`
+	TARGET="darwin-i386-cc"
+	CLANG=`xcrun -f clang`
 
-    if [[ $ARCH == "x86_64" ]]; then
-        TARGET="darwin64-x86_64-cc"
-    fi
+	if [[ $ARCH == "x86_64" ]]; then
+		TARGET="darwin64-x86_64-cc"
+	fi
 
-    SYSTEM="darwin"
-    export $PLATFORM
-    export CROSS_TOP="${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer"
-    export CROSS_SDK="${PLATFORM}${OSX_SDK_VERSION}.sdk"
-    export BUILD_TOOLS="${DEVELOPER}"
+	SYSTEM="darwin"
+	export $PLATFORM
+	export CROSS_TOP="${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer"
+	export CROSS_SDK="${PLATFORM}${OSX_SDK_VERSION}.sdk"
+	export BUILD_TOOLS="${DEVELOPER}"
 
-    export CC="${CLANG} ${BITCODE_OPTION} -mmacosx-version-min=${OSX_DEPLOYMENT_TARGET}"
+	export CC="${CLANG} ${BITCODE_OPTION} -mmacosx-version-min=${OSX_DEPLOYMENT_TARGET}"
 
-    MACHINE=`echo -"$ARCH" | sed -e 's/^-//'`
+	MACHINE=`echo -"$ARCH" | sed -e 's/^-//'`
 	BUILD="build"
 
 	export MACHINE
 	export SYSTEM
 	export BUILD
 
-    export HOSTCC=/usr/bin/cc
+	export HOSTCC=/usr/bin/cc
 	export HOSTCFLAGS="-arch x86_64"
 
-    pushd . > /dev/null
-    cd "${OPENSSL_VERSION}"
+	pushd . > /dev/null
+	cd "${OPENSSL_VERSION}"
 }
 
 function buildIOS()
 {
-    OPENSSL_OPTION="no-asm no-shared no-async no-ssl2 no-ssl3 no-idea no-mdc2 no-rc5 no-ec2m no-deprecated no-dso no-hw no-engine"  
-    # setEnvironmentiOS $1
-    resetOpenSSL
-    ARCH=$1
+	OPENSSL_OPTION="no-asm no-shared no-async no-ssl2 no-ssl3 no-idea no-mdc2 no-rc5 no-ec2m no-deprecated no-dso no-hw no-engine"  
+	# setEnvironmentiOS $1
+	resetOpenSSL
+	ARCH=$1
 
-    pushd . > /dev/null
-    cd "${OPENSSL_VERSION}"
+	pushd . > /dev/null
+	cd "${OPENSSL_VERSION}"
 
-    if [[ "${ARCH}" == "i386" || "${ARCH}" == "x86_64" ]]; then
-        PLATFORM="iPhoneSimulator"
-        # CROSS_TYPE=Simulator
-    else
-        PLATFORM="iPhoneOS"
-        # CROSS_TYPE=OS
-        # sed -ie "s!static volatile sig_atomic_t intr_signal;!static volatile intr_signal;!" "crypto/ui/ui_openssl.c"
-    fi
+	if [[ "${ARCH}" == "i386" || "${ARCH}" == "x86_64" ]]; then
+		PLATFORM="iPhoneSimulator"
+		# CROSS_TYPE=Simulator
+	else
+		PLATFORM="iPhoneOS"
+		# CROSS_TYPE=OS
+		# sed -ie "s!static volatile sig_atomic_t intr_signal;!static volatile intr_signal;!" "crypto/ui/ui_openssl.c"
+	fi
 
-    if [[ "${ARCH}" == "x86_64" ]]; then
-        TARGET="darwin64-x86_64-cc"
-    elif [[ "${ARCH}" == "i386" ]]; then
-        TARGET="darwin-i386-cc"
-    elif [[ "${ARCH}" == "arm64" ]]; then
-        TARGET="ios64-cross"
-    else
-        TARGET="ios-cross"
-    fi
+	if [[ "${ARCH}" == "x86_64" ]]; then
+		TARGET="darwin64-x86_64-cc"
+	elif [[ "${ARCH}" == "i386" ]]; then
+		TARGET="darwin-i386-cc"
+	elif [[ "${ARCH}" == "arm64" ]]; then
+		TARGET="ios64-cross"
+	else
+		TARGET="ios-cross"
+	fi
 
+	export ARCH=${ARCH}
+	export PLATFORM=${PLATFORM}
+	export HOSTCC=/usr/bin/cc
+	export HOSTCFLAGS="-arch x86_64"
+	export FIPS_SIG=/usr/local/bin/incore_macho
 
-    export ARCH=${ARCH}
-    export PLATFORM=${PLATFORM}
-    export HOSTCC=/usr/bin/cc
-    export HOSTCFLAGS="-arch x86_64"
-    export FIPS_SIG=/usr/local/bin/incore_macho
-
-    export CC=clang;
-    export CROSS_TOP=/Applications/Xcode.app/Contents/Developer/Platforms/${PLATFORM}.platform/Developer
-    export CROSS_SDK=${PLATFORM}.sdk
-    export PATH="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin:$PATH"
+	export CC=clang;
+	export CROSS_TOP=/Applications/Xcode.app/Contents/Developer/Platforms/${PLATFORM}.platform/Developer
+	export CROSS_SDK=${PLATFORM}.sdk
+	export PATH="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin:$PATH"
 
 	echo "Building ${OPENSSL_VERSION} for ${PLATFORM} ${IOS_SDK_VERSION} ${ARCH}"
 
-    if [[ "${ENABLE_FIPS}" == "yes" ]]; then
-	    ./Configure fips ${TARGET} ${OPENSSL_OPTION}  --prefix="${TEMP}/${OPENSSL_VERSION}-iOS-${ARCH}" --openssldir="${TEMP}/${OPENSSL_VERSION}-iOS-${ARCH}" --with-fipsdir="${TEMP}/${FIPS_VERSION}-${ARCH}" &> "${TEMP}/${OPENSSL_VERSION}-iOS-${ARCH}.log"
-    else
-	    ./Configure ${TARGET} ${OPENSSL_OPTION}  --prefix="${TEMP}/${OPENSSL_VERSION}-iOS-${ARCH}" --openssldir="${TEMP}/${OPENSSL_VERSION}-iOS-${ARCH}" &> "${TEMP}/${OPENSSL_VERSION}-iOS-${ARCH}.log"
-    fi
+	if [[ "${ENABLE_FIPS}" == "yes" ]]; then
+		./Configure fips ${TARGET} ${OPENSSL_OPTION}  --prefix="${TEMP}/${OPENSSL_VERSION}-iOS-${ARCH}" --openssldir="${TEMP}/${OPENSSL_VERSION}-iOS-${ARCH}" --with-fipsdir="${TEMP}/${FIPS_VERSION}-${ARCH}" &> "${TEMP}/${OPENSSL_VERSION}-iOS-${ARCH}.log"
+	else
+		./Configure ${TARGET} ${OPENSSL_OPTION}  --prefix="${TEMP}/${OPENSSL_VERSION}-iOS-${ARCH}" --openssldir="${TEMP}/${OPENSSL_VERSION}-iOS-${ARCH}" &> "${TEMP}/${OPENSSL_VERSION}-iOS-${ARCH}.log"
+	fi
 
-   	# add -isysroot to CC=
-    if [[ "${ENABLE_BITCODE}" == "yes" ]]; then
-        sed -ie 's!^CFLAGS=!CFLAGS=-fembed-bitcode !' 'Makefile'
-    fi
+	# add -isysroot to CC=
+	if [[ "${ENABLE_BITCODE}" == "yes" ]]; then
+		sed -ie 's!^CFLAGS=!CFLAGS=-fembed-bitcode !' 'Makefile'
+	fi
 
-    if [[ "${ARCH}" == "armv7" ]]; then
-        sed -ie 's!^CFLAG=!CFLAG=-arch armv7 !' 'Makefile'
-    elif [[ "${ARCH}" == "arm64" ]]; then
-        sed -ie 's!^CFLAG=!CFLAG=-arch arm64 !' 'Makefile'
-    elif [[ "${ARCH}" == "i386" ]]; then
-        sed -ie 's!^CFLAG=!CFLAG=-arch i386 !' 'Makefile'
-    elif [[ "${ARCH}" == "x86_64" ]]; then
-        sed -ie 's!^CFLAG=!CFLAG=-arch x86_64 !' 'Makefile'
-    fi
+	if [[ "${ARCH}" == "armv7" ]]; then
+		sed -ie 's!^CFLAG=!CFLAG=-arch armv7 !' 'Makefile'
+	elif [[ "${ARCH}" == "arm64" ]]; then
+		sed -ie 's!^CFLAG=!CFLAG=-arch arm64 !' 'Makefile'
+	elif [[ "${ARCH}" == "i386" ]]; then
+		sed -ie 's!CNF_CFLAGS=-arch i386!CNF_CFLAGS=-arch i386 -miphoneos-version-min=8.0.0 -fno-common -isysroot $(CROSS_TOP)/SDKs/$(CROSS_SDK)!' 'Makefile'
+		#sed -ie 's!^CFLAG=!CFLAG=-arch i386 !' 'Makefile'
+	elif [[ "${ARCH}" == "x86_64" ]]; then
+		sed -ie 's!CNF_CFLAGS=-arch x86_64!CNF_CFLAGS=-arch x86_64 -miphoneos-version-min=8.0.0 -fno-common -isysroot $(CROSS_TOP)/SDKs/$(CROSS_SDK)!' 'Makefile'
+		#sed -ie 's!^CFLAG=!CFLAG=-arch x86_64 !' 'Makefile'
+	fi
 
-    if [[ "${ARCH}" == "i386" || "${ARCH}" == "x86_64" ]]; then
-        sed -ie 's!$(CROSS_TOP)/SDKs/$(CROSS_SDK)!/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk -miphoneos-version-min=8.0!' 'Makefile'
-    else
-        sed -ie 's!$(CROSS_TOP)/SDKs/$(CROSS_SDK)!/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk -miphoneos-version-min=8.0!' 'Makefile'
-    fi
+	# if [[ "${ARCH}" == "i386" || "${ARCH}" == "x86_64" ]]; then
+	#     sed -ie 's!$(CROSS_TOP)/SDKs/$(CROSS_SDK)!/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk -miphoneos-version-min=8.0!' 'Makefile'
+	# else
+	#     sed -ie 's!$(CROSS_TOP)/SDKs/$(CROSS_SDK)!/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk -miphoneos-version-min=8.0!' 'Makefile'
+	# fi
     
-    if [[ "${ARCH}" == "armv7" ]]; then
-        sed -ie "s!-fomit-frame-pointer!-fno-omit-frame-pointer!" "Makefile"
-    fi
+	if [[ "${ARCH}" == "armv7" ]]; then
+		sed -ie "s!-fomit-frame-pointer!-fno-omit-frame-pointer!" "Makefile"
+	fi
 
-    make clean
-    make depend
-    echo "Running make"
-    make >> "${TEMP}/${OPENSSL_VERSION}-iOS-${ARCH}.log" 2>&1
-    echo "Running make install"
-    make install >> "${TEMP}/${OPENSSL_VERSION}-iOS-${ARCH}.log" 2>&1
-    make install_sw >> "${TEMP}/${OPENSSL_VERSION}-iOS-${ARCH}.log" 2>&1
-    echo "Running make clean"
-    make clean >> "${TEMP}/${OPENSSL_VERSION}-iOS-${ARCH}.log" 2>&1
-    popd > /dev/null
+	#    make clean
+	#    make depend
+	echo "Running make"
+	make >> "${TEMP}/${OPENSSL_VERSION}-iOS-${ARCH}.log" 2>&1
+	echo "Running make install"
+	make install >> "${TEMP}/${OPENSSL_VERSION}-iOS-${ARCH}.log" 2>&1
+	make install_sw >> "${TEMP}/${OPENSSL_VERSION}-iOS-${ARCH}.log" 2>&1
+	echo "Running make clean"
+	make clean >> "${TEMP}/${OPENSSL_VERSION}-iOS-${ARCH}.log" 2>&1
+	popd > /dev/null
 }
 
 function setEnvironmentiOS {
 
-    resetEnvironment
-    resetOpenSSL
+	resetEnvironment
+	resetOpenSSL
 
-    ARCH=$1
+	ARCH=$1
 
-    pushd . > /dev/null
-    cd "${OPENSSL_VERSION}"
+	pushd . > /dev/null
+	cd "${OPENSSL_VERSION}"
 
-    if [[ "${ARCH}" == "i386" || "${ARCH}" == "x86_64" ]]; then
-        PLATFORM="iPhoneSimulator"
-        CROSS_TYPE=Simulator
-    else
-        PLATFORM="iPhoneOS"
-        CROSS_TYPE=OS
-        # sed -ie "s!static volatile sig_atomic_t intr_signal;!static volatile intr_signal;!" "crypto/ui/ui_openssl.c"
-    fi
+	if [[ "${ARCH}" == "i386" || "${ARCH}" == "x86_64" ]]; then
+		PLATFORM="iPhoneSimulator"
+		CROSS_TYPE=Simulator
+	else
+		PLATFORM="iPhoneOS"
+		CROSS_TYPE=OS
+		# sed -ie "s!static volatile sig_atomic_t intr_signal;!static volatile intr_signal;!" "crypto/ui/ui_openssl.c"
+	fi
 
-    TARGET="iphoneos-cross"
+	TARGET="iphoneos-cross"
 
-    # if [[ "${ARCH}" == "x86_64" ]]; then
-    #     TARGET="darwin64-x86_64-cc"
+	# if [[ "${ARCH}" == "x86_64" ]]; then
+	#     TARGET="darwin64-x86_64-cc"
 	# elif [[ "${ARCH}" == "i386" ]]; then
-    #     TARGET="darwin-i386-cc"
-    # fi
+	#     TARGET="darwin-i386-cc"
+	# fi
 
-    export $PLATFORM
+	export $PLATFORM
 
-    # CROSS_TOP is the top of the development tools tree
-    export CROSS_TOP="${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer"
-    export CROSS_SDK="${PLATFORM}${IOS_SDK_VERSION}.sdk"
-    export BUILD_TOOLS="${DEVELOPER}"
+	# CROSS_TOP is the top of the development tools tree
+	export CROSS_TOP="${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer"
+	export CROSS_SDK="${PLATFORM}${IOS_SDK_VERSION}.sdk"
+	export BUILD_TOOLS="${DEVELOPER}"
 
-    echo "Building ${OPENSSL_VERSION} for ${PLATFORM} ${IOS_SDK_VERSION} ${ARCH}"
+	echo "Building ${OPENSSL_VERSION} for ${PLATFORM} ${IOS_SDK_VERSION} ${ARCH}"
 
-    export HOSTCC=/usr/bin/cc
-    export HOSTCFLAGS="-arch x86_64"
-    export IOS_TARGET=darwin-iphoneos-cross
-    export FIPS_SIG=/usr/local/bin/incore_macho
-    cross_arch="-armv7"
-    cross_type=`echo $CROSS_TYPE | tr '[A-Z]' '[a-z]'`
-    MACHINE=`echo "$cross_arch" | sed -e 's/^-//'`
-    SYSTEM="iphoneos"
-    BUILD="build"
-    export MACHINE
-    export SYSTEM
-    export BUILD
+	export HOSTCC=/usr/bin/cc
+	export HOSTCFLAGS="-arch x86_64"
+	export IOS_TARGET=darwin-iphoneos-cross
+	export FIPS_SIG=/usr/local/bin/incore_macho
+	cross_arch="-armv7"
+	cross_type=`echo $CROSS_TYPE | tr '[A-Z]' '[a-z]'`
+	MACHINE=`echo "$cross_arch" | sed -e 's/^-//'`
+	SYSTEM="iphoneos"
+	BUILD="build"
+	export MACHINE
+	export SYSTEM
+	export BUILD
 
-    export CC="${BUILD_TOOLS}/usr/bin/gcc ${BITCODE_OPTION} -mios-version-min=${IOS_MIN_SDK_VERSION} -arch ${ARCH}"
+	export CC="${BUILD_TOOLS}/usr/bin/gcc ${BITCODE_OPTION} -mios-version-min=${IOS_MIN_SDK_VERSION} -arch ${ARCH}"
 }
 
 function resetIncore() {
 
-    resetEnvironment
+	resetEnvironment
 
-    # rm -rf "${INCORE_VERSION}"
+	# rm -rf "${INCORE_VERSION}"
 
 	echo "Unpacking incore"
 
@@ -634,7 +627,7 @@ function resetIncore() {
 
 function resetFIPS() {
 
-    resetEnvironment
+	resetEnvironment
 
 	rm -rf "${FIPS_VERSION}"
 
@@ -647,21 +640,21 @@ function resetFIPS() {
 function resetOpenSSL() {
 	resetEnvironment
 
-    rm -rf "${OPENSSL_VERSION}"
+	rm -rf "${OPENSSL_VERSION}"
 
 	echo "Unpacking openssl"
 	tar xfz "${OPENSSL_VERSION}.tar.gz"
 	chmod +x "${OPENSSL_VERSION}/Configure"
-	
-    #modify secure coding
-    cp -f ${OPENSSL_VERSION}/crypto/mem.c ${OPENSSL_VERSION}/crypto/mem_old.c
-    cat ${OPENSSL_VERSION}/crypto/mem.c | sed 's/strcpy(ret, str);/memset(ret, 0, strlen(str) + 1);\
-    \#ifdef _WIN32\
-    strcpy_s(ret, str, strlen(str));\
-    \#else	\
-    strncpy(ret, str, strlen(str));\
-    \#endif/g' > mem_new.c	
-    cp -f mem_new.c ${OPENSSL_VERSION}/crypto/mem.c	
+
+	#modify secure coding
+	cp -f ${OPENSSL_VERSION}/crypto/mem.c ${OPENSSL_VERSION}/crypto/mem_old.c
+	cat ${OPENSSL_VERSION}/crypto/mem.c | sed 's/strcpy(ret, str);/memset(ret, 0, strlen(str) + 1);\
+	\#ifdef _WIN32\
+	strcpy_s(ret, str, strlen(str));\
+	\#else	\
+	strncpy(ret, str, strlen(str));\
+	\#endif/g' > mem_new.c	
+	cp -f mem_new.c ${OPENSSL_VERSION}/crypto/mem.c	
 
 	cp -f "${OPENSSL_VERSION}/include/openssl/stack.h" "${OPENSSL_VERSION}/include/openssl/stack_old.h"
 	cat "${OPENSSL_VERSION}/include/openssl/stack.h" | sed 's/if OPENSSL_API_COMPAT < 0x10100000L/if 0/'> ./stack_new.h
@@ -676,37 +669,37 @@ function cleanupTemp() {
 }
 
 function cleanupAll() {
-    echo "Cleaning up Everything"
+	echo "Cleaning up Everything"
 
-    cleanupTemp
-    resetEnvironment
+	cleanupTemp
+	resetEnvironment
 
-    rm -rf include/openssl/* lib/*
-    rm -rf ${OPENSSL_VERSION}
-    rm -rf ${FIPS_VERSION}
+	rm -rf include/openssl/* lib/*
+	rm -rf ${OPENSSL_VERSION}
+	rm -rf ${FIPS_VERSION}
 #     rm -rf "openssl-fips-2.0.1"
 }
 
 function resetEnvironment {
 
-    echo "Resetting Environment Variables"
+	echo "Resetting Environment Variables"
 
-    unset MACHINE
-    unset SYSTEM
-    unset CROSS_COMPILE
-    unset CROSS_COMPILE_SUFFIX
-    unset HOSTCC
-    unset FIPS_SIG
-    unset INSTALL_PREFIX
-    unset cross_arch
-    unset CC
-    unset KERNEL_BITS
-    unset CROSS_TOP
-    unset CROSS_SDK
-    unset BUILD_TOOLS
-    unset HOSTCFLAGS
-    unset PLATFORM
-    unset BUILD
+	unset MACHINE
+	unset SYSTEM
+	unset CROSS_COMPILE
+	unset CROSS_COMPILE_SUFFIX
+	unset HOSTCC
+	unset FIPS_SIG
+	unset INSTALL_PREFIX
+	unset cross_arch
+	unset CC
+	unset KERNEL_BITS
+	unset CROSS_TOP
+	unset CROSS_SDK
+	unset BUILD_TOOLS
+	unset HOSTCFLAGS
+	unset PLATFORM
+	unset BUILD
 }
 
 #   Main Function Call

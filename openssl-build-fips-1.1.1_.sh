@@ -501,9 +501,9 @@ function buildIOS()
     fi
 
     if [[ "${ARCH}" == "x86_64" ]]; then
-        TARGET="ios64-xcrun"
+        TARGET="darwin64-x86_64-cc"
     elif [[ "${ARCH}" == "i386" ]]; then
-        TARGET="ios-xcrun"
+        TARGET="darwin-i386-cc"
     elif [[ "${ARCH}" == "arm64" ]]; then
         TARGET="ios64-cross"
     else

@@ -14,12 +14,12 @@ BITCODE_OPTION=
 OUTPUT="out"
 TEMP="$(pwd)/tmp"
 if [[ "${ENABLE_BITCODE}" == "yes" ]]; then
-    BITCODE_OPTION=-fembed-bitcode
+	BITCODE_OPTION=-fembed-bitcode
 	OUTPUT+="_BITCODE"
 fi
 ENABLE_FIPS=$2
 if [[ "${ENABLE_FIPS}" == "" ]]; then
-    ENABLE_FIPS=no
+	ENABLE_FIPS=no
 elif [[ "${ENABLE_FIPS}" == "yes" ]]; then
 	OUTPUT+="_FIPS"
 fi
@@ -39,47 +39,47 @@ fi
 
 function main() {
 
-    set -x
+	set -x
 
-    ## set trap to help debug build errors
-    #trap 'echo "** ERROR with Build - Check /tmp/openssl*.log"; tail /tmp/openssl*.log' INT TERM EXIT
+	## set trap to help debug build errors
+	#trap 'echo "** ERROR with Build - Check /tmp/openssl*.log"; tail /tmp/openssl*.log' INT TERM EXIT
 
-    if [ $1 -e "-h" ]; then
-    	usage
-    fi
+	if [ $1 -e "-h" ]; then
+		usage
+	fi
 
-#   Setting library versions
-    setLibraryVersion
+	#   Setting library versions
+	setLibraryVersion
 
-#   Setting deployment targets
-    setDeploymentTargets
+	#   Setting deployment targets
+	setDeploymentTargets
 
-#   Start clean
-    cleanupAll
+	#   Start clean
+	cleanupAll
 
-#   Creating output directories
-    createOutputDirectories
+	#   Creating output directories
+	createOutputDirectories
 
-#   Downloading Source files
-    downloadSource
+	#   Downloading Source files
+	downloadSource
 
-#   Building Incore Library
-    buildIncore
+	#   Building Incore Library
+	buildIncore
 
-#   Building FIPS and OpenSSL for All Arch
-    buildFipsForAllArch
+	#   Building FIPS and OpenSSL for All Arch
+	buildFipsForAllArch
 
-#   Creating combined fat libraries
-    createFatLibraries
+	#   Creating combined fat libraries
+	createFatLibraries
 
-#   Creating output package
-    createOutputPackage
+	#   Creating output package
+	createOutputPackage
 
-#   Finish clean
-    # cleanupAll
+	#   Finish clean
+	# cleanupAll
 
-    echo "Done..."
-    echo "Add the openssl directory in ${PWD}/$OUTPUT to your xcode project"
+	echo "Done..."
+	echo "Add the openssl directory in ${PWD}/$OUTPUT to your xcode project"
 }
 
 function usage(){
@@ -89,20 +89,20 @@ function usage(){
 
 function setDeploymentTargets() {
 
-    if [ -z $3 ]; then
-        IOS_SDK_VERSION="" #"11.2"
-        IOS_MIN_SDK_VERSION="8.0"
+	if [ -z $3 ]; then
+		IOS_SDK_VERSION="" #"11.2"
+		IOS_MIN_SDK_VERSION="8.0"
 
-    	TVOS_SDK_VERSION="" #"9.0"
-    	TVOS_MIN_SDK_VERSION="9.0"
+		TVOS_SDK_VERSION="" #"9.0"
+		TVOS_MIN_SDK_VERSION="9.0"
 
-        OSX_SDK_VERSION="" #"10.13"
-    	OSX_DEPLOYMENT_TARGET="10.11"
-    else
-    	IOS_SDK_VERSION=$3
-    	TVOS_SDK_VERSION=$4
-    	OSX_DEPLOYMENT_TARGET=$5
-    fi
+		OSX_SDK_VERSION="" #"10.13"
+		OSX_DEPLOYMENT_TARGET="10.11"
+	else
+		IOS_SDK_VERSION=$3
+		TVOS_SDK_VERSION=$4
+		OSX_DEPLOYMENT_TARGET=$5
+	fi
 }
 
 function setLibraryVersion() {
@@ -120,68 +120,68 @@ function setLibraryVersion() {
 
 function downloadSource() {
 
-    if [ ! -e ${FIPS_VERSION}.tar.gz ]; then
-    	echo "Downloading ${FIPS_VERSION}.tar.gz"
-    	curl -O https://www.openssl.org/source/${FIPS_VERSION}.tar.gz
-    else
-    	echo "Using ${FIPS_VERSION}.tar.gz"
-    fi
+	if [ ! -e ${FIPS_VERSION}.tar.gz ]; then
+		echo "Downloading ${FIPS_VERSION}.tar.gz"
+		curl -O https://www.openssl.org/source/${FIPS_VERSION}.tar.gz
+	else
+		echo "Using ${FIPS_VERSION}.tar.gz"
+	fi
 
-    if [ ! -e ${OPENSSL_VERSION}.tar.gz ]; then
-    	echo "Downloading ${OPENSSL_VERSION}.tar.gz"
-    	curl -O https://www.openssl.org/source/${OPENSSL_VERSION}.tar.gz
-    else
-    	echo "Using ${OPENSSL_VERSION}.tar.gz"
-    fi
+	if [ ! -e ${OPENSSL_VERSION}.tar.gz ]; then
+		echo "Downloading ${OPENSSL_VERSION}.tar.gz"
+		curl -O https://www.openssl.org/source/${OPENSSL_VERSION}.tar.gz
+	else
+		echo "Using ${OPENSSL_VERSION}.tar.gz"
+	fi
 
-    # if [ ! -e ${INCORE_VERSION}.tar.gz ]; then
-    # 	echo "Downloading ${INCORE_VERSION}.tar.gz"
-    # 	curl -O http://openssl.com/fips/2.0/platforms/ios/${INCORE_VERSION}.tar.gz
-    # else
-    # 	echo "Using ${INCORE_VERSION}.tar.gz"
-    # fi
+	# if [ ! -e ${INCORE_VERSION}.tar.gz ]; then
+	# 	echo "Downloading ${INCORE_VERSION}.tar.gz"
+	# 	curl -O http://openssl.com/fips/2.0/platforms/ios/${INCORE_VERSION}.tar.gz
+	# else
+	# 	echo "Using ${INCORE_VERSION}.tar.gz"
+	# fi
 
-    if [ ! -e incore_macho.c ]; then
-    	echo "Downloading updated incore_macho.c"
-    	curl -O https://raw.githubusercontent.com/nilesh1883/incore_macho/master/incore_macho.c
-    else
-    	echo "Using incore_macho.c"
-    fi
+	if [ ! -e incore_macho.c ]; then
+		echo "Downloading updated incore_macho.c"
+		curl -O https://raw.githubusercontent.com/nilesh1883/incore_macho/master/incore_macho.c
+	else
+		echo "Using incore_macho.c"
+	fi
 }
 
 function createFatLibraries() {
 
-    echo "Create Fat libcrypto iOS libraries"
-    lipo -create -output lib/libcrypto_iOS.a \
-       "${TEMP}/${OPENSSL_VERSION}-iOS-armv7/lib/libcrypto.a" \
-       "${TEMP}/${OPENSSL_VERSION}-iOS-i386/lib/libcrypto.a"
-    echo "Adding 64-bit libraries"
-    lipo \
-       "lib/libcrypto_iOS.a" \
-       "${TEMP}/${OPENSSL_VERSION}-iOS-arm64/lib/libcrypto.a" \
-       "${TEMP}/${OPENSSL_VERSION}-iOS-x86_64/lib/libcrypto.a" \
-       -create -output lib/libcrypto_iOS.a
+	echo "Create Fat libcrypto iOS libraries"
+	lipo -create -output lib/libcrypto_iOS.a \
+		"${TEMP}/${OPENSSL_VERSION}-iOS-armv7/lib/libcrypto.a" \
+		"${TEMP}/${OPENSSL_VERSION}-iOS-i386/lib/libcrypto.a"
+	echo "Adding 64-bit libraries"
+	lipo \
+		"lib/libcrypto_iOS.a" \
+		"${TEMP}/${OPENSSL_VERSION}-iOS-arm64/lib/libcrypto.a" \
+		"${TEMP}/${OPENSSL_VERSION}-iOS-x86_64/lib/libcrypto.a" \
+		-create -output lib/libcrypto_iOS.a
 
-    echo "Create Fat libssl iOS libraries"
-    lipo -create -output lib/libssl_iOS.a \
-       "${TEMP}/${OPENSSL_VERSION}-iOS-armv7/lib/libssl.a" \
-       "${TEMP}/${OPENSSL_VERSION}-iOS-i386/lib/libssl.a"
-    lipo \
-       "lib/libssl_iOS.a" \
-       "${TEMP}/${OPENSSL_VERSION}-iOS-arm64/lib/libssl.a" \
-       "${TEMP}/${OPENSSL_VERSION}-iOS-x86_64/lib/libssl.a" \
-       -create -output lib/libssl_iOS.a
+	echo "Create Fat libssl iOS libraries"
+	lipo -create -output lib/libssl_iOS.a \
+		"${TEMP}/${OPENSSL_VERSION}-iOS-armv7/lib/libssl.a" \
+		"${TEMP}/${OPENSSL_VERSION}-iOS-i386/lib/libssl.a"
+	lipo \
+		"lib/libssl_iOS.a" \
+		"${TEMP}/${OPENSSL_VERSION}-iOS-arm64/lib/libssl.a" \
+		"${TEMP}/${OPENSSL_VERSION}-iOS-x86_64/lib/libssl.a" \
+		-create -output lib/libssl_iOS.a
 
 
-    echo "Create Fat libcrypto OSX libraries"
-    lipo -create -output lib/libcrypto_mac.a \
-       "${TEMP}/${OPENSSL_VERSION}-OSX-x86_64/lib/libcrypto.a"
-#       "${TEMP}/${OPENSSL_VERSION}-OSX-i386/lib/libcrypto.a"
+	echo "Create Fat libcrypto OSX libraries"
+	lipo -create -output lib/libcrypto_mac.a \
+		"${TEMP}/${OPENSSL_VERSION}-OSX-x86_64/lib/libcrypto.a"
+		#       "${TEMP}/${OPENSSL_VERSION}-OSX-i386/lib/libcrypto.a"
 
-    echo "Create Fat libssl OSX libraries"
-    lipo -create -output lib/libssl_mac.a \
-       "${TEMP}/${OPENSSL_VERSION}-OSX-x86_64/lib/libssl.a"
-#       "${TEMP}/${OPENSSL_VERSION}-OSX-i386/lib/libssl.a"
+	echo "Create Fat libssl OSX libraries"
+	lipo -create -output lib/libssl_mac.a \
+		"${TEMP}/${OPENSSL_VERSION}-OSX-x86_64/lib/libssl.a"
+		#       "${TEMP}/${OPENSSL_VERSION}-OSX-i386/lib/libssl.a"
 }
 
 function createOutputDirectories {

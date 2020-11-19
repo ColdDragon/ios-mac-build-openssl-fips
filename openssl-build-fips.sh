@@ -141,12 +141,12 @@ function downloadSource() {
     # 	echo "Using ${INCORE_VERSION}.tar.gz"
     # fi
 
-    if [ ! -e incore_macho.c ]; then
-    	echo "Downloading updated incore_macho.c"
-    	curl -O https://raw.githubusercontent.com/nilesh1883/incore_macho/master/incore_macho.c
-    else
-    	echo "Using incore_macho.c"
-    fi
+    #if [ ! -e incore_macho.c ]; then
+    #	echo "Downloading updated incore_macho.c"
+    #	curl -O https://raw.githubusercontent.com/nilesh1883/incore_macho/master/incore_macho.c
+    #else
+    #	echo "Using incore_macho.c"
+    #fi
 }
 
 function createFatLibraries() {

@@ -176,12 +176,12 @@ function createFatLibraries() {
 	echo "Create Fat libcrypto OSX libraries"
 	lipo -create -output lib/libcrypto_mac.a \
 		"${TEMP}/${OPENSSL_VERSION}-OSX-x86_64/lib/libcrypto.a"
-		#       "${TEMP}/${OPENSSL_VERSION}-OSX-i386/lib/libcrypto.a"
+		"${TEMP}/${OPENSSL_VERSION}-OSX-arm64/lib/libcrypto.a"
 
 	echo "Create Fat libssl OSX libraries"
 	lipo -create -output lib/libssl_mac.a \
 		"${TEMP}/${OPENSSL_VERSION}-OSX-x86_64/lib/libssl.a"
-		#       "${TEMP}/${OPENSSL_VERSION}-OSX-i386/lib/libssl.a"
+		"${TEMP}/${OPENSSL_VERSION}-OSX-arm64/lib/libssl.a"
 }
 
 function createOutputDirectories {
@@ -218,7 +218,7 @@ function buildFipsForAllArch() {
 	echo "Building FIPS OSX libraries"
 
 	#ARCHSOSX=("i386" "x86_64")
-	ARCHSOSX=("x86_64")
+	ARCHSOSX=("x86_64" "arm64")
 
 	for ((i=0; i < ${#ARCHSOSX[@]}; i++))
 	do
@@ -389,13 +389,14 @@ function setEnvironmentFIPS {
 	cd "${FIPS_VERSION}"
 }
 
-function buildMac() {
-
-	echo "Building ${OPENSSL_VERSION} for ${ARCH}"
+function buildMac() {	
 
 	OPENSSL_OPTION="no-asm no-shared no-async no-ssl2 no-ssl3 no-idea no-mdc2 no-rc5 no-ec2m no-comp"
 	resetOpenSSL
 	ARCH=$1
+	
+	echo "Building ${OPENSSL_VERSION} for ${ARCH}"
+	
 	pushd . > /dev/null
 	cd "${OPENSSL_VERSION}"
 
@@ -403,15 +404,11 @@ function buildMac() {
 	unset CROSS_TOP
 	unset CROSS_SDK
 
-	if [[ $ARCH == "x86_64" ]]; then
-		TARGET="darwin64-x86_64-cc"
-	else
-		TARGET="darwin-i386-cc"
-	fi
+	TARGET="darwin64-${ARCH}-cc"		
 
 	export HOSTCC=/usr/bin/cc
-	export HOSTCFLAGS="-arch x86_64"
-
+	export HOSTCFLAGS="-arch ${ARCH}"
+	
 	if [[ "${ENABLE_FIPS}" == "yes" ]]; then
 		./Configure fips ${TARGET} ${OPENSSL_OPTION} --prefix="${TEMP}/${OPENSSL_VERSION}-OSX-${ARCH}" --openssldir="${TEMP}/${OPENSSL_VERSION}-OSX-${ARCH}" --with-fipslibdir="${TEMP}/${FIPS_VERSION}-${ARCH}/lib/"  --with-fipsdir="${TEMP}/${FIPS_VERSION}-${ARCH}" &> "${TEMP}/${OPENSSL_VERSION}-OSX-${ARCH}.log"
 	else
@@ -449,6 +446,8 @@ function setEnvironmentOSX {
 
 	if [[ $ARCH == "x86_64" ]]; then
 		TARGET="darwin64-x86_64-cc"
+	else
+		TARGET="darwin64-arm64-cc"
 	fi
 
 	SYSTEM="darwin"

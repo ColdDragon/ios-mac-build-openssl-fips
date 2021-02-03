@@ -151,36 +151,28 @@ function downloadSource() {
 
 function createFatLibraries() {
 
-	echo "Create Fat libcrypto iOS libraries"
+	echo "Create Fat libcrypto iOS libraries[arm7 + arm64 + i386 + x86_64]"
 	lipo -create -output lib/libcrypto_iOS.a \
 		"${TEMP}/${OPENSSL_VERSION}-iOS-armv7/lib/libcrypto.a" \
-		"${TEMP}/${OPENSSL_VERSION}-iOS-i386/lib/libcrypto.a"
-	echo "Adding 64-bit libraries"
-	lipo \
-		"lib/libcrypto_iOS.a" \
+		"${TEMP}/${OPENSSL_VERSION}-iOS-i386/lib/libcrypto.a" \
 		"${TEMP}/${OPENSSL_VERSION}-iOS-arm64/lib/libcrypto.a" \
-		"${TEMP}/${OPENSSL_VERSION}-iOS-x86_64/lib/libcrypto.a" \
-		-create -output lib/libcrypto_iOS.a
-
-	echo "Create Fat libssl iOS libraries"
+		"${TEMP}/${OPENSSL_VERSION}-iOS-x86_64/lib/libcrypto.a"
+		
+	echo "Create Fat libssl iOS libraries[arm7 + arm64 + i386 + x86_64]"
 	lipo -create -output lib/libssl_iOS.a \
 		"${TEMP}/${OPENSSL_VERSION}-iOS-armv7/lib/libssl.a" \
-		"${TEMP}/${OPENSSL_VERSION}-iOS-i386/lib/libssl.a"
-	lipo \
-		"lib/libssl_iOS.a" \
+		"${TEMP}/${OPENSSL_VERSION}-iOS-i386/lib/libssl.a" \
 		"${TEMP}/${OPENSSL_VERSION}-iOS-arm64/lib/libssl.a" \
-		"${TEMP}/${OPENSSL_VERSION}-iOS-x86_64/lib/libssl.a" \
-		-create -output lib/libssl_iOS.a
-
-
-	echo "Create Fat libcrypto OSX libraries"
+		"${TEMP}/${OPENSSL_VERSION}-iOS-x86_64/lib/libssl.a"
+		
+	echo "Create Fat libcrypto OSX libraries[arm64 + x86_64]"
 	lipo -create -output lib/libcrypto_mac.a \
-		"${TEMP}/${OPENSSL_VERSION}-OSX-x86_64/lib/libcrypto.a"
+		"${TEMP}/${OPENSSL_VERSION}-OSX-x86_64/lib/libcrypto.a" \
 		"${TEMP}/${OPENSSL_VERSION}-OSX-arm64/lib/libcrypto.a"
 
-	echo "Create Fat libssl OSX libraries"
+	echo "Create Fat libssl OSX libraries[arm64 + x86_64]"
 	lipo -create -output lib/libssl_mac.a \
-		"${TEMP}/${OPENSSL_VERSION}-OSX-x86_64/lib/libssl.a"
+		"${TEMP}/${OPENSSL_VERSION}-OSX-x86_64/lib/libssl.a" \
 		"${TEMP}/${OPENSSL_VERSION}-OSX-arm64/lib/libssl.a"
 }
 

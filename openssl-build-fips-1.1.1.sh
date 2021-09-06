@@ -36,6 +36,10 @@ _INCORE_VERSION=$5
 if [ -e ${_INCORE_VERSION}.tar.gz ]; then
 	INCORE_VERSION=${_INCORE_VERSION}
 fi
+BUILD_TARGET=$6
+if [[ "${BUILD_TARGET}" == "" ]]; then
+	BUILD_TARGET=all	#ios, macos, all
+fi
 
 function main() {
 
@@ -151,29 +155,33 @@ function downloadSource() {
 
 function createFatLibraries() {
 
-	echo "Create Fat libcrypto iOS libraries[arm7 + arm64 + i386 + x86_64]"
-	lipo -create -output lib/libcrypto_iOS.a \
-		"${TEMP}/${OPENSSL_VERSION}-iOS-armv7/lib/libcrypto.a" \
-		"${TEMP}/${OPENSSL_VERSION}-iOS-i386/lib/libcrypto.a" \
-		"${TEMP}/${OPENSSL_VERSION}-iOS-arm64/lib/libcrypto.a" \
-		"${TEMP}/${OPENSSL_VERSION}-iOS-x86_64/lib/libcrypto.a"
-		
-	echo "Create Fat libssl iOS libraries[arm7 + arm64 + i386 + x86_64]"
-	lipo -create -output lib/libssl_iOS.a \
-		"${TEMP}/${OPENSSL_VERSION}-iOS-armv7/lib/libssl.a" \
-		"${TEMP}/${OPENSSL_VERSION}-iOS-i386/lib/libssl.a" \
-		"${TEMP}/${OPENSSL_VERSION}-iOS-arm64/lib/libssl.a" \
-		"${TEMP}/${OPENSSL_VERSION}-iOS-x86_64/lib/libssl.a"
-		
-	echo "Create Fat libcrypto OSX libraries[arm64 + x86_64]"
-	lipo -create -output lib/libcrypto_mac.a \
-		"${TEMP}/${OPENSSL_VERSION}-OSX-x86_64/lib/libcrypto.a" \
-		"${TEMP}/${OPENSSL_VERSION}-OSX-arm64/lib/libcrypto.a"
+	if [[ "${BUILD_TARGET}" == "all" ]] || [[ "${BUILD_TARGET}" == "ios" ]]; then
+		echo "Create Fat libcrypto iOS libraries[arm7 + arm64 + i386 + x86_64]"
+		lipo -create -output lib/libcrypto_iOS.a \
+			"${TEMP}/${OPENSSL_VERSION}-iOS-armv7/lib/libcrypto.a" \
+			"${TEMP}/${OPENSSL_VERSION}-iOS-i386/lib/libcrypto.a" \
+			"${TEMP}/${OPENSSL_VERSION}-iOS-arm64/lib/libcrypto.a" \
+			"${TEMP}/${OPENSSL_VERSION}-iOS-x86_64/lib/libcrypto.a"
+			
+		echo "Create Fat libssl iOS libraries[arm7 + arm64 + i386 + x86_64]"
+		lipo -create -output lib/libssl_iOS.a \
+			"${TEMP}/${OPENSSL_VERSION}-iOS-armv7/lib/libssl.a" \
+			"${TEMP}/${OPENSSL_VERSION}-iOS-i386/lib/libssl.a" \
+			"${TEMP}/${OPENSSL_VERSION}-iOS-arm64/lib/libssl.a" \
+			"${TEMP}/${OPENSSL_VERSION}-iOS-x86_64/lib/libssl.a"
+	fi
+	
+	if [[ "${BUILD_TARGET}" == "all" ]] || [[ "${BUILD_TARGET}" == "macos" ]]; then
+		echo "Create Fat libcrypto OSX libraries[arm64 + x86_64]"
+		lipo -create -output lib/libcrypto_mac.a \
+			"${TEMP}/${OPENSSL_VERSION}-OSX-x86_64/lib/libcrypto.a" \
+			"${TEMP}/${OPENSSL_VERSION}-OSX-arm64/lib/libcrypto.a"
 
-	echo "Create Fat libssl OSX libraries[arm64 + x86_64]"
-	lipo -create -output lib/libssl_mac.a \
-		"${TEMP}/${OPENSSL_VERSION}-OSX-x86_64/lib/libssl.a" \
-		"${TEMP}/${OPENSSL_VERSION}-OSX-arm64/lib/libssl.a"
+		echo "Create Fat libssl OSX libraries[arm64 + x86_64]"
+		lipo -create -output lib/libssl_mac.a \
+			"${TEMP}/${OPENSSL_VERSION}-OSX-x86_64/lib/libssl.a" \
+			"${TEMP}/${OPENSSL_VERSION}-OSX-arm64/lib/libssl.a"
+	fi
 }
 
 function createOutputDirectories {
@@ -196,39 +204,49 @@ function createOutputDirectories {
 
 function createOutputPackage() {
 
-	cp lib/libssl_iOS.a $OUTPUT/openssl/iOS/libssl.a
-	cp lib/libcrypto_iOS.a $OUTPUT/openssl/iOS/libcrypto.a
-	cp lib/libssl_mac.a $OUTPUT/openssl/mac/libssl.a
-	cp lib/libcrypto_mac.a $OUTPUT/openssl/mac/libcrypto.a
-	cp /usr/local/bin/incore_macho $OUTPUT/openssl/bin/incore_macho
-	cp -r ${TEMP}/${OPENSSL_VERSION}-iOS-armv7/include $OUTPUT/openssl/include
-	cp ${TEMP}/${FIPS_VERSION}-armv7/lib/fips_premain.c $OUTPUT/openssl/fips_premain.c
+	if [[ "${BUILD_TARGET}" == "all" ]] || [[ "${BUILD_TARGET}" == "macos" ]]; then
+		cp lib/libssl_mac.a $OUTPUT/openssl/mac/libssl.a
+		cp lib/libcrypto_mac.a $OUTPUT/openssl/mac/libcrypto.a
+	fi
+	
+	if [[ "${BUILD_TARGET}" == "all" ]] || [[ "${BUILD_TARGET}" == "ios" ]]; then
+		cp lib/libssl_iOS.a $OUTPUT/openssl/iOS/libssl.a
+		cp lib/libcrypto_iOS.a $OUTPUT/openssl/iOS/libcrypto.a
+
+		cp /usr/local/bin/incore_macho $OUTPUT/openssl/bin/incore_macho
+		cp -r ${TEMP}/${OPENSSL_VERSION}-iOS-armv7/include $OUTPUT/openssl/include
+		cp ${TEMP}/${FIPS_VERSION}-armv7/lib/fips_premain.c $OUTPUT/openssl/fips_premain.c
+	fi
 }
 
 function buildFipsForAllArch() {
 
-	echo "Building FIPS OSX libraries"
+	if [[ "${BUILD_TARGET}" == "all" ]] || [[ "${BUILD_TARGET}" == "macos" ]]; then
+		echo "Building FIPS OSX libraries"
 
-	#ARCHSOSX=("i386" "x86_64")
-	ARCHSOSX=("x86_64" "arm64")
+		#ARCHSOSX=("i386" "x86_64")
+		ARCHSOSX=("x86_64" "arm64")
 
-	for ((i=0; i < ${#ARCHSOSX[@]}; i++))
-	do
-		#buildFIPS "${ARCHSOSX[i]}" "OSX"
-		buildMac "${ARCHSOSX[i]}"
-	done
+		for ((i=0; i < ${#ARCHSOSX[@]}; i++))
+		do
+			#buildFIPS "${ARCHSOSX[i]}" "OSX"
+			buildMac "${ARCHSOSX[i]}"
+		done
+	fi
 
-	echo "Building FIPS iOS libraries"
+	if [[ "${BUILD_TARGET}" == "all" ]] || [[ "${BUILD_TARGET}" == "ios" ]]; then
+		echo "Building FIPS iOS libraries"
 
-	#   Not Working "armv7s"
-	#   https://github.com/openssl/openssl/issues/2927
-	ARCHSIOS=("armv7" "arm64" "i386" "x86_64")
+		#   Not Working "armv7s"
+		#   https://github.com/openssl/openssl/issues/2927
+		ARCHSIOS=("armv7" "arm64" "i386" "x86_64")
 
-	for ((i=0; i < ${#ARCHSIOS[@]}; i++))
-	do
-		buildFIPS "${ARCHSIOS[i]}" "iOS"
-		buildIOS "${ARCHSIOS[i]}"
-	done
+		for ((i=0; i < ${#ARCHSIOS[@]}; i++))
+		do
+			buildFIPS "${ARCHSIOS[i]}" "iOS"
+			buildIOS "${ARCHSIOS[i]}"
+		done
+	fi
 }
 
 function buildIncore() {

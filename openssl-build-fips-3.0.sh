@@ -664,7 +664,7 @@ function resetOpenSSL() {
     cp -f mem_new.c ${OPENSSL_VERSION}/crypto/mem.c	
 
 	cp -f "${OPENSSL_VERSION}/include/openssl/stack.h" "${OPENSSL_VERSION}/include/openssl/stack_old.h"
-	cat "${OPENSSL_VERSION}/include/openssl/stack.h" | sed 's/if OPENSSL_API_COMPAT < 0x10100000L/if 0/'> ./stack_new.h
+	cat "${OPENSSL_VERSION}/include/openssl/stack.h" | sed 's/if OPENSSL_API_COMPAT < 0x10100000L/if 0/' | sed 's/ifndef OPENSSL_NO_DEPRECATED_1_1_0/if 0/' > ./stack_new.h
 	cp -f ./stack_new.h "${OPENSSL_VERSION}/include/openssl/stack.h"
 }
 

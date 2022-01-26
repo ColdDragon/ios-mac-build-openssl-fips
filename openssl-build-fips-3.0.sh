@@ -243,7 +243,7 @@ function buildFipsForAllArch() {
 
 		for ((i=0; i < ${#ARCHSIOS[@]}; i++))
 		do
-			buildFIPS "${ARCHSIOS[i]}" "iOS"
+			#buildFIPS "${ARCHSIOS[i]}" "iOS"
 			buildIOS "${ARCHSIOS[i]}"
 		done
 	fi
